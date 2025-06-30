@@ -421,13 +421,24 @@ function detectContentType(url, responseHeaders, content = null) {
         }
     }
 
+    // 强制修复关键文件类型 - 优先级最高
+    if (fileExtension === 'css') {
+        return 'text/css; charset=utf-8';
+    }
+    if (fileExtension === 'js' || fileExtension === 'mjs') {
+        return 'application/javascript; charset=utf-8';
+    }
+
     // 强制使用期望的MIME类型（如果有的话）
     if (expectedMimeType) {
         return expectedMimeType;
     }
 
     // 使用响应头中的Content-Type（如果看起来正确）
-    if (headerContentType && !headerContentType.includes('text/plain') && !headerContentType.includes('application/json')) {
+    if (headerContentType &&
+        !headerContentType.includes('text/plain') &&
+        !headerContentType.includes('application/json') &&
+        !headerContentType.includes('text/html')) {
         return headerContentType;
     }
 
