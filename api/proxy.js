@@ -15,10 +15,17 @@ const ALLOWED_DOMAINS = [
     'raw.githubusercontent.com',
     'github.com',
     'objects.githubusercontent.com',
+    // GitHub静态资源域名
+    'github.githubassets.com',
+    'githubassets.com',
+    'camo.githubusercontent.com',
+    'avatars.githubusercontent.com',
+    'user-images.githubusercontent.com',
+    'github-production-user-asset-6210df.s3.amazonaws.com',
+    'github-production-repository-file-5c1aeb.s3.amazonaws.com',
+    // Google服务
     'www.google.com',
     'translate.googleapis.com',
-    'httpbin.org',
-    'jsonplaceholder.typicode.com',
     // 音乐播放器相关域名
     'player.imixc.top',
     '*.imixc.top',
@@ -414,8 +421,13 @@ function detectContentType(url, responseHeaders, content = null) {
         }
     }
 
+    // 强制使用期望的MIME类型（如果有的话）
+    if (expectedMimeType) {
+        return expectedMimeType;
+    }
+
     // 使用响应头中的Content-Type（如果看起来正确）
-    if (headerContentType && !headerContentType.includes('text/plain')) {
+    if (headerContentType && !headerContentType.includes('text/plain') && !headerContentType.includes('application/json')) {
         return headerContentType;
     }
 
