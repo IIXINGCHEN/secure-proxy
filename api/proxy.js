@@ -530,8 +530,7 @@ function processHtmlContent(html, baseUrl, proxyHost = '') {
     '        } catch (e) {\n' +
     '            return paramUrl;\n' +
     '        }\n' +
-    '    }\n'
-
+    '    }\n' +
     '\n' +
     '    var originalFetch = window.fetch;\n' +
     '    window.fetch = function(input, init) {\n' +
@@ -556,8 +555,7 @@ function processHtmlContent(html, baseUrl, proxyHost = '') {
     '    XMLHttpRequest.prototype.open = function(method, paramUrl, async, user, password) {\n' +
     '        var proxyUrl = createProxyUrl(paramUrl);\n' +
     '        return originalOpen.call(this, method, proxyUrl, async, user, password);\n' +
-    '    };\n'
-
+    '    };\n' +
     '\n' +
     '    if (window.WebAssembly && WebAssembly.instantiateStreaming) {\n' +
     '        var originalInstantiateStreaming = WebAssembly.instantiateStreaming;\n' +
