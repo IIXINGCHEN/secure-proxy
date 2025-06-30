@@ -48,7 +48,7 @@ function applyUIConfig(uiConfig) {
     document.title = uiConfig.PAGE_TITLE;
     const pageHeader = document.getElementById('page-header');
     if (pageHeader) {
-        pageHeader.innerHTML = `<strong>【安全】</strong>的Vercel反向代理`;
+        pageHeader.innerHTML = `<strong>安全</strong> Vercel 反向代理`;
     }
     
     // 更新输入框占位符
