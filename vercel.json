@@ -1,12 +1,10 @@
 {
   "rewrites": [
+    { "source": "/test-proxy", "destination": "/src/pages/test-proxy.html" },
     { "source": "/https/:match/:url*", "destination": "https://:match/:url*" },
     { "source": "/https/:match/:url*/", "destination": "https://:match/:url*/" },
     { "source": "/http/:match/:url*", "destination": "http://:match/:url*" },
     { "source": "/http/:match/:url*/", "destination": "http://:match/:url*/" }
-  ],
-  "routes": [
-    { "src": "/test-proxy", "dest": "/src/pages/test-proxy.html" }
   ],
   "headers": [
     {
