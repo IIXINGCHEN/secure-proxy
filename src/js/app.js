@@ -95,10 +95,7 @@ function initializeApp(securityConfig, uiConfig, appConfig) {
     // 绑定事件监听器
     bindEventListeners(input, submit, proxyHandler);
     
-    // 显示版本信息（如果启用调试模式）
-    if (appConfig.DEBUG_MODE) {
-        console.log(`Vercel Proxy v${appConfig.VERSION} (${appConfig.BUILD_DATE})`);
-    }
+
 }
 
 /**

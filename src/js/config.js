@@ -21,9 +21,7 @@ const SECURITY_CONFIG = {
         'www.google.com',
         'translate.googleapis.com',
         
-        // 开发测试服务
-        'httpbin.org',
-        'jsonplaceholder.typicode.com',
+
         
         // 可以根据需要添加更多域名
          'player.imixc.top',
@@ -176,18 +174,14 @@ const APP_CONFIG = {
     VERSION: '2.0.0',
     BUILD_DATE: '2025-06-30',
     
-    // 调试配置
-    DEBUG_MODE: false,                 // 生产环境设为false
-    CONSOLE_LOGGING: false,            // 生产环境关闭控制台日志
-    LOCAL_TEST_MODE: false,            // 生产环境关闭本地测试模式
+
     
     // 性能配置
     PERFORMANCE: {
         enableCaching: true,           // 启用缓存
         cacheTimeout: 300000,          // 缓存超时时间(5分钟)
         requestTimeout: 10000,         // 请求超时时间(10秒)
-        enableConnectivityCheck: false, // 启用连通性检查（可能受跨域限制）
-        enablePreflightCheck: false,   // 启用预检查
+
     },
 
     // 速率限制配置
@@ -247,64 +241,9 @@ const LEGAL_CONFIG = {
     }
 };
 
-// 开发者配置
-const DEVELOPER_CONFIG = {
-    // API端点配置
-    API_ENDPOINTS: {
-        HEALTH_CHECK: '/api/health',
-        STATS: '/api/stats',
-        CONFIG: '/api/config'
-    },
 
-    // 开发工具配置
-    DEV_TOOLS: {
-        enableSourceMaps: false,       // 生产环境禁用
-        enableHotReload: false,        // 生产环境禁用
-        enableDebugPanel: false,       // 生产环境禁用
-        enableConfigEditor: false,     // 配置编辑器
-        enableStatsViewer: true,       // 统计查看器
-        enableExportTools: true        // 导出工具
-    }
-};
 
-// 配置管理器
-const CONFIG_MANAGER = {
-    // 配置版本控制
-    VERSION_CONTROL: {
-        currentVersion: '2.0.0',
-        compatibleVersions: ['2.0.0', '1.9.x'],
-        autoMigrate: true,
-        backupOnChange: true
-    },
 
-    // 配置验证规则
-    VALIDATION_RULES: {
-        ALLOWED_DOMAINS: {
-            required: true,
-            type: 'array',
-            minLength: 1,
-            itemType: 'string',
-            pattern: /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
-        },
-        SECURITY_OPTIONS: {
-            required: true,
-            type: 'object',
-            properties: {
-                enforceWhitelist: { type: 'boolean', default: true },
-                blockPrivateNetworks: { type: 'boolean', default: true },
-                validateUrlFormat: { type: 'boolean', default: true }
-            }
-        }
-    },
-
-    // 配置热更新
-    HOT_RELOAD: {
-        enabled: false,
-        checkInterval: 5000,           // 检查间隔(毫秒)
-        autoApply: false,              // 自动应用更改
-        notifyOnChange: true           // 更改时通知
-    }
-};
 
 // 导出配置对象
 if (typeof module !== 'undefined' && module.exports) {
@@ -313,9 +252,7 @@ if (typeof module !== 'undefined' && module.exports) {
         SECURITY_CONFIG,
         UI_CONFIG,
         APP_CONFIG,
-        LEGAL_CONFIG,
-        DEVELOPER_CONFIG,
-        CONFIG_MANAGER
+        LEGAL_CONFIG
     };
 } else {
     // 浏览器环境
@@ -323,9 +260,7 @@ if (typeof module !== 'undefined' && module.exports) {
         SECURITY_CONFIG,
         UI_CONFIG,
         APP_CONFIG,
-        LEGAL_CONFIG,
-        DEVELOPER_CONFIG,
-        CONFIG_MANAGER
+        LEGAL_CONFIG
     };
 }
 

@@ -54,70 +54,55 @@ class ProxyHandler {
                 return;
             }
 
-            // 构建代理URL - 使用新的API端点
+            // 获取访问令牌
+            let accessToken;
+            try {
+                accessToken = await this.getAccessToken();
+                if (!accessToken) {
+                    this.showError({
+                        title: '🔐 令牌获取失败',
+                        description: '无法获取访问令牌，请刷新页面重试'
+                    });
+                    this.showLoading(false);
+                    return;
+                }
+            } catch (error) {
+                console.error('获取访问令牌失败:', error);
+                this.showError({
+                    title: '🔐 安全验证失败',
+                    description: '安全验证过程中发生错误，请刷新页面重试'
+                });
+                this.showLoading(false);
+                return;
+            }
+
+            // 构建代理URL - 使用新的API端点（包含令牌）
             const baseUrl = location.origin;
-            const proxyUrl = `${baseUrl}/api/proxy?url=${encodeURIComponent(inputValue)}`;
+            const proxyUrl = `${baseUrl}/api/proxy?url=${encodeURIComponent(inputValue)}&token=${accessToken}`;
 
             // 记录访问日志
             this.logAccess(inputValue, proxyUrl);
 
-            // 可选：检查目标URL可达性
-            if (this.appConfig.PERFORMANCE.enableConnectivityCheck) {
-                try {
-                    await this.checkUrlConnectivity(proxyUrl);
-                } catch (error) {
-                    this.showError(this.uiConfig.ERROR_MESSAGES.NETWORK_ERROR);
+
+
+            // 尝试在新窗口中打开代理页面
+            try {
+                const newWindow = window.open(proxyUrl, "_blank", "noopener,noreferrer");
+                if (!newWindow) {
+                    this.showError(this.uiConfig.ERROR_MESSAGES.POPUP_BLOCKED);
                     this.showLoading(false);
                     return;
                 }
-            }
 
-            // 检查是否在本地环境
-            const isLocalEnvironment = location.hostname === 'localhost' || 
-                                      location.hostname === '127.0.0.1' || 
-                                      location.hostname.startsWith('192.168.') ||
-                                      location.hostname.startsWith('10.');
-            
-            if (isLocalEnvironment) {
-                // 本地环境提示
-                this.showWarning(`
-                    <strong>本地测试环境检测</strong><br>
-                    代理URL已生成: <code>${proxyUrl}</code><br>
-                    <small>注意: 代理功能需要在Vercel平台上才能正常工作。<br>
-                    本地环境仅用于界面和验证功能测试。</small>
-                `);
-                
-                // 仍然尝试打开，但用户会看到404
-                try {
-                    const newWindow = window.open(proxyUrl, "_blank", "noopener,noreferrer");
-                    if (!newWindow) {
-                        this.showError(this.uiConfig.ERROR_MESSAGES.POPUP_BLOCKED);
-                    }
-                } catch (error) {
-                    console.error('打开窗口失败:', error);
-                    this.showError(this.uiConfig.ERROR_MESSAGES.POPUP_BLOCKED);
-                }
-            } else {
-                // 生产环境正常处理
-                try {
-                    const newWindow = window.open(proxyUrl, "_blank", "noopener,noreferrer");
-                    if (!newWindow) {
-                        this.showError(this.uiConfig.ERROR_MESSAGES.POPUP_BLOCKED);
-                        this.showLoading(false);
-                        return;
-                    }
-                    
-                    // 显示成功消息
-                    this.showSuccess(this.uiConfig.SUCCESS_MESSAGES.PROXY_CREATED);
-                    
-                    if (this.appConfig.CONSOLE_LOGGING) {
-                        console.log(this.uiConfig.SUCCESS_MESSAGES.PROXY_CREATED);
-                    }
-                    
-                } catch (error) {
-                    console.error('打开窗口失败:', error);
-                    this.showError(this.uiConfig.ERROR_MESSAGES.POPUP_BLOCKED);
-                }
+                // 标记令牌已使用
+                this.markTokenUsed();
+
+                // 显示成功消息
+                this.showSuccess(this.uiConfig.SUCCESS_MESSAGES.PROXY_CREATED);
+
+            } catch (error) {
+                console.error('打开窗口失败:', error);
+                this.showError(this.uiConfig.ERROR_MESSAGES.POPUP_BLOCKED);
             }
             
             this.showLoading(false);
@@ -182,41 +167,120 @@ class ProxyHandler {
     }
 
     /**
-     * 检查URL连通性（可选功能）
+     * 获取访问令牌
+     * @returns {Promise<string|null>} 访问令牌
      */
-    async checkUrlConnectivity(url) {
-        return new Promise((resolve, reject) => {
-            const timeout = this.appConfig.PERFORMANCE.requestTimeout || 5000;
-            const timeoutId = setTimeout(() => {
-                reject(new Error('连接超时'));
-            }, timeout);
-
-            // 尝试使用fetch进行预检查（可能受CORS限制）
-            if (this.appConfig.PERFORMANCE.enablePreflightCheck) {
-                fetch(url, {
-                    method: 'HEAD',
-                    mode: 'no-cors',
-                    cache: 'no-cache'
-                })
-                .then(() => {
-                    clearTimeout(timeoutId);
-                    resolve();
-                })
-                .catch((error) => {
-                    clearTimeout(timeoutId);
-                    // 即使CORS失败，也不一定意味着URL不可达
-                    // 在生产环境中，这个检查可能不太有效
-                    resolve(); // 暂时总是解析成功
-                });
-            } else {
-                // 简单的延迟模拟
-                setTimeout(() => {
-                    clearTimeout(timeoutId);
-                    resolve();
-                }, 100);
+    async getAccessToken() {
+        try {
+            // 检查是否有缓存的有效令牌
+            const cachedToken = this.getCachedToken();
+            if (cachedToken && this.isTokenValid(cachedToken)) {
+                return cachedToken.token;
             }
-        });
-    }
+
+            // 请求新的访问令牌
+            const baseUrl = location.origin;
+            const tokenUrl = `${baseUrl}/api/token`;
+
+            const response = await fetch(tokenUrl, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Cache-Control': 'no-cache'
+                },
+                credentials: 'same-origin'
+            });
+
+            if (!response.ok) {
+                throw new Error(`Token request failed: ${response.status}`);
+            }
+
+            const tokenData = await response.json();
+
+            if (tokenData.success && tokenData.token) {
+                // 缓存令牌
+                this.cacheToken(tokenData);
+                return tokenData.token;
+            } else {
+                throw new Error('Invalid token response');
+            }
+        } catch (error) {
+            console.error('获取访问令牌失败:', error);
+            return null;
+        }
+    },
+
+    /**
+     * 缓存访问令牌
+     * @param {Object} tokenData - 令牌数据
+     */
+    cacheToken(tokenData) {
+        try {
+            const cacheData = {
+                token: tokenData.token,
+                expiresAt: Date.now() + (tokenData.expiresIn || 3600000), // 默认1小时
+                maxRequests: tokenData.maxRequests || 100,
+                usedRequests: 0
+            };
+            localStorage.setItem('proxy_access_token', JSON.stringify(cacheData));
+        } catch (error) {
+            console.warn('无法缓存访问令牌:', error);
+        }
+    },
+
+    /**
+     * 获取缓存的令牌
+     * @returns {Object|null} 缓存的令牌数据
+     */
+    getCachedToken() {
+        try {
+            const cached = localStorage.getItem('proxy_access_token');
+            return cached ? JSON.parse(cached) : null;
+        } catch (error) {
+            console.warn('无法读取缓存的令牌:', error);
+            return null;
+        }
+    },
+
+    /**
+     * 验证令牌是否有效
+     * @param {Object} tokenData - 令牌数据
+     * @returns {boolean} 是否有效
+     */
+    isTokenValid(tokenData) {
+        if (!tokenData || !tokenData.token) {
+            return false;
+        }
+
+        // 检查是否过期
+        if (Date.now() >= tokenData.expiresAt) {
+            return false;
+        }
+
+        // 检查使用次数限制
+        if (tokenData.usedRequests >= tokenData.maxRequests) {
+            return false;
+        }
+
+        return true;
+    },
+
+    /**
+     * 标记令牌已使用
+     */
+    markTokenUsed() {
+        try {
+            const cached = this.getCachedToken();
+            if (cached) {
+                cached.usedRequests = (cached.usedRequests || 0) + 1;
+                localStorage.setItem('proxy_access_token', JSON.stringify(cached));
+            }
+        } catch (error) {
+            console.warn('无法更新令牌使用计数:', error);
+        }
+    },
+
+
 
     /**
      * 记录访问日志和统计

@@ -25,6 +25,23 @@ const ALLOWED_DOMAINS = [
     '*.ixingchen.top'
 ];
 
+// 防盗链配置
+const ANTI_HOTLINK_CONFIG = {
+    ENABLED: true,
+    ALLOWED_REFERERS: [
+        'secure-proxy-seven.vercel.app',
+        'localhost',
+        '127.0.0.1',
+        'xy.ixingchen.top'
+    ],
+    REQUIRE_TOKEN: true,
+    TOKEN_EXPIRY: 3600000, // 1小时
+    MAX_REQUESTS_PER_TOKEN: 100
+};
+
+// 访问令牌存储（生产环境应使用Redis等外部存储）
+const TOKEN_STORE = new Map();
+
 // 生产环境配置
 const PROXY_CONFIG = {
     USER_AGENT: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -101,6 +118,130 @@ function isAllowedDomain(hostname) {
 
         return normalizedHost === normalizedDomain || normalizedHost.endsWith('.' + normalizedDomain);
     });
+}
+
+/**
+ * 防盗链验证器
+ * @param {Request} request - 请求对象
+ * @returns {boolean} 是否允许访问
+ */
+function validateReferer(request) {
+    if (!ANTI_HOTLINK_CONFIG.ENABLED) {
+        return true;
+    }
+
+    const referer = request.headers.get('referer');
+    const origin = request.headers.get('origin');
+
+    // 如果没有referer和origin，拒绝访问（防止直接访问）
+    if (!referer && !origin) {
+        return false;
+    }
+
+    // 检查referer
+    if (referer) {
+        try {
+            const refererUrl = new URL(referer);
+            const refererHost = refererUrl.hostname;
+
+            return ANTI_HOTLINK_CONFIG.ALLOWED_REFERERS.some(allowedReferer => {
+                return refererHost === allowedReferer ||
+                       refererHost.endsWith('.' + allowedReferer);
+            });
+        } catch (e) {
+            return false;
+        }
+    }
+
+    // 检查origin
+    if (origin) {
+        try {
+            const originUrl = new URL(origin);
+            const originHost = originUrl.hostname;
+
+            return ANTI_HOTLINK_CONFIG.ALLOWED_REFERERS.some(allowedReferer => {
+                return originHost === allowedReferer ||
+                       originHost.endsWith('.' + allowedReferer);
+            });
+        } catch (e) {
+            return false;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * 生成访问令牌
+ * @param {string} clientId - 客户端标识
+ * @returns {string} 访问令牌
+ */
+function generateAccessToken(clientId = 'default') {
+    const tokenId = generateRequestId();
+    const token = {
+        id: tokenId,
+        clientId: clientId,
+        createdAt: Date.now(),
+        expiresAt: Date.now() + ANTI_HOTLINK_CONFIG.TOKEN_EXPIRY,
+        requestCount: 0,
+        maxRequests: ANTI_HOTLINK_CONFIG.MAX_REQUESTS_PER_TOKEN
+    };
+
+    TOKEN_STORE.set(tokenId, token);
+
+    // 清理过期令牌
+    cleanupExpiredTokens();
+
+    return tokenId;
+}
+
+/**
+ * 验证访问令牌
+ * @param {string} tokenId - 令牌ID
+ * @returns {boolean} 是否有效
+ */
+function validateAccessToken(tokenId) {
+    if (!ANTI_HOTLINK_CONFIG.REQUIRE_TOKEN) {
+        return true;
+    }
+
+    if (!tokenId) {
+        return false;
+    }
+
+    const token = TOKEN_STORE.get(tokenId);
+    if (!token) {
+        return false;
+    }
+
+    // 检查是否过期
+    if (Date.now() > token.expiresAt) {
+        TOKEN_STORE.delete(tokenId);
+        return false;
+    }
+
+    // 检查请求次数限制
+    if (token.requestCount >= token.maxRequests) {
+        return false;
+    }
+
+    // 增加请求计数
+    token.requestCount++;
+    TOKEN_STORE.set(tokenId, token);
+
+    return true;
+}
+
+/**
+ * 清理过期令牌
+ */
+function cleanupExpiredTokens() {
+    const now = Date.now();
+    for (const [tokenId, token] of TOKEN_STORE.entries()) {
+        if (now > token.expiresAt) {
+            TOKEN_STORE.delete(tokenId);
+        }
+    }
 }
 
 /**
@@ -225,12 +366,41 @@ function detectContentType(url, responseHeaders, content = null) {
         }
     }
 
-    // 验证响应头的正确性 - 特别处理WASM文件
+    // 强化MIME类型验证和修复逻辑
     if (headerContentType && expectedMimeType) {
         const headerType = headerContentType.toLowerCase().split(';')[0].trim();
         const expectedType = expectedMimeType.toLowerCase().split(';')[0].trim();
 
-        // 如果响应头类型明显错误，使用期望类型
+        // 强制修复明显错误的MIME类型
+        const incorrectMimeTypes = [
+            // CSS文件被错误标记为JSON
+            { wrong: 'application/json', correct: 'text/css', extensions: ['css'] },
+            // JS文件被错误标记为JSON
+            { wrong: 'application/json', correct: 'application/javascript', extensions: ['js', 'mjs'] },
+            // 图片文件被错误标记
+            { wrong: 'application/json', correct: 'image/png', extensions: ['png'] },
+            { wrong: 'application/json', correct: 'image/jpeg', extensions: ['jpg', 'jpeg'] },
+            { wrong: 'application/json', correct: 'image/svg+xml', extensions: ['svg'] },
+            // 字体文件被错误标记
+            { wrong: 'application/json', correct: 'font/woff2', extensions: ['woff2'] },
+            { wrong: 'application/json', correct: 'font/woff', extensions: ['woff'] },
+            // WASM文件被错误标记
+            { wrong: 'application/json', correct: 'application/wasm', extensions: ['wasm'] },
+            // 其他常见错误
+            { wrong: 'text/plain', correct: expectedType, extensions: ['css', 'js', 'json'] },
+            { wrong: 'text/html', correct: expectedType, extensions: ['css', 'js', 'json', 'xml'] }
+        ];
+
+        // 检查是否需要修复MIME类型
+        for (const rule of incorrectMimeTypes) {
+            if (headerType === rule.wrong && rule.extensions.includes(fileExtension)) {
+                if (rule.correct === expectedType || rule.correct !== 'expectedType') {
+                    return rule.correct === 'expectedType' ? expectedMimeType : rule.correct;
+                }
+            }
+        }
+
+        // 如果响应头类型明显错误，强制使用期望类型
         if (headerType === 'application/json' && expectedType !== 'application/json') {
             return expectedMimeType;
         }
@@ -240,11 +410,6 @@ function detectContentType(url, responseHeaders, content = null) {
         }
 
         if (headerType === 'text/html' && (expectedType === 'text/css' || expectedType === 'application/javascript')) {
-            return expectedMimeType;
-        }
-
-        // 特别处理WASM文件 - 如果期望是WASM但返回JSON，强制使用WASM类型
-        if (expectedType === 'application/wasm' && headerType === 'application/json') {
             return expectedMimeType;
         }
     }
@@ -660,6 +825,36 @@ export default async function handler(request) {
             });
         }
 
+        // 处理令牌生成请求
+        if (requestUrl.pathname === '/api/token' || requestUrl.searchParams.get('action') === 'token') {
+            // 验证referer以确保请求来自授权网站
+            if (!validateReferer(request)) {
+                return createErrorResponse({
+                    error: 'Access denied',
+                    message: 'Token generation is only allowed from authorized websites.',
+                    code: 'UNAUTHORIZED_TOKEN_REQUEST',
+                    timestamp: new Date().toISOString(),
+                    requestId: generateRequestId()
+                }, 403);
+            }
+
+            const token = generateAccessToken();
+            return new Response(JSON.stringify({
+                success: true,
+                token: token,
+                expiresIn: ANTI_HOTLINK_CONFIG.TOKEN_EXPIRY,
+                maxRequests: ANTI_HOTLINK_CONFIG.MAX_REQUESTS_PER_TOKEN,
+                timestamp: new Date().toISOString()
+            }), {
+                status: 200,
+                headers: {
+                    'Content-Type': 'application/json; charset=utf-8',
+                    'Access-Control-Allow-Origin': '*',
+                    'Cache-Control': 'no-cache, no-store, must-revalidate'
+                }
+            });
+        }
+
         // 解析目标URL
         const targetUrl = requestUrl.searchParams.get('url');
 
@@ -759,6 +954,29 @@ export default async function handler(request) {
                 timestamp: new Date().toISOString(),
                 requestId: generateRequestId()
             }, 400);
+        }
+
+        // 防盗链验证
+        if (!validateReferer(request)) {
+            return createErrorResponse({
+                error: 'Access denied',
+                message: 'Direct access to proxy URLs is not allowed. Please access through the authorized website.',
+                code: 'HOTLINK_PROTECTION',
+                timestamp: new Date().toISOString(),
+                requestId: generateRequestId()
+            }, 403);
+        }
+
+        // 访问令牌验证
+        const token = requestUrl.searchParams.get('token');
+        if (!validateAccessToken(token)) {
+            return createErrorResponse({
+                error: 'Invalid or expired access token',
+                message: 'Please obtain a valid access token from the authorized website.',
+                code: 'TOKEN_REQUIRED',
+                timestamp: new Date().toISOString(),
+                requestId: generateRequestId()
+            }, 403);
         }
 
         // 域名白名单验证
