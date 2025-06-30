@@ -85,7 +85,7 @@ Object.assign(ProxyHandler.prototype, {
                 messageDiv.appendChild(closeBtn);
             }
 
-            document.querySelector('.span10.noFloat').appendChild(messageDiv);
+            document.querySelector('.content-container').appendChild(messageDiv);
         }
 
         // 设置消息内容

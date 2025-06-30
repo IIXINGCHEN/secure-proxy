@@ -146,7 +146,7 @@ class ProxyHandler {
                     <div class="loading-spinner"></div>
                     正在处理请求...
                 `;
-                document.querySelector('.span10.noFloat').appendChild(loadingDiv);
+                document.querySelector('.content-container').appendChild(loadingDiv);
             }
             loadingDiv.style.display = 'block';
 

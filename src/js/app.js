@@ -534,7 +534,7 @@ function showError(message) {
         errorDiv.id = 'error-message';
         errorDiv.className = 'message-container error-message';
         errorDiv.style.display = 'block';
-        const container = document.querySelector('.span10.noFloat') || document.body;
+        const container = document.querySelector('.content-container') || document.body;
         container.appendChild(errorDiv);
     }
 
