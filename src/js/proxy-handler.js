@@ -54,9 +54,9 @@ class ProxyHandler {
                 return;
             }
 
-            // 构建代理URL
+            // 构建代理URL - 使用新的API端点
             const baseUrl = location.origin;
-            const proxyUrl = `${baseUrl}/${protocol}/${hostname}`;
+            const proxyUrl = `${baseUrl}/api/proxy?url=${encodeURIComponent(inputValue)}`;
 
             // 记录访问日志
             this.logAccess(inputValue, proxyUrl);

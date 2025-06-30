@@ -1,8 +1,6 @@
 {
   "rewrites": [
-    { "source": "/test-proxy", "destination": "/src/pages/test-proxy.html" },
-    { "source": "/https/:host/:path*", "destination": "https://:host/:path*" },
-    { "source": "/http/:host/:path*", "destination": "http://:host/:path*" }
+    { "source": "/test-proxy", "destination": "/src/pages/test-proxy.html" }
   ],
   "headers": [
     {
