@@ -104,9 +104,7 @@ class ProxyHandler {
                         // 尝试复制链接到剪贴板
                         this.copyToClipboard(proxyUrl);
                     } else {
-                        // 成功打开新窗口，标记令牌已使用
-                        this.markTokenUsed();
-
+                        // 成功打开新窗口
                         this.showSuccess({
                             title: '✅ 代理页面已打开',
                             description: '新窗口中将显示完整的页面内容，请查看新标签页。'
@@ -192,12 +190,7 @@ class ProxyHandler {
      */
     async getAccessToken() {
         try {
-            // 检查是否有缓存的有效令牌
-            const cachedToken = this.getCachedToken();
-            if (cachedToken && this.isTokenValid(cachedToken)) {
-                return cachedToken.token;
-            }
-
+            // 每次都请求新的访问令牌，避免计数不同步问题
             // 请求新的访问令牌
             const baseUrl = location.origin;
             const tokenUrl = `${baseUrl}/api/token`;
@@ -218,8 +211,6 @@ class ProxyHandler {
             const tokenData = await response.json();
 
             if (tokenData.success && tokenData.token) {
-                // 缓存令牌
-                this.cacheToken(tokenData);
                 return tokenData.token;
             } else {
                 throw new Error('Invalid token response');
@@ -230,75 +221,7 @@ class ProxyHandler {
         }
     }
 
-    /**
-     * 缓存访问令牌
-     * @param {Object} tokenData - 令牌数据
-     */
-    cacheToken(tokenData) {
-        try {
-            const cacheData = {
-                token: tokenData.token,
-                expiresAt: Date.now() + (tokenData.expiresIn || 3600000), // 默认1小时
-                maxRequests: tokenData.maxRequests || 100,
-                usedRequests: 0
-            };
-            localStorage.setItem('proxy_access_token', JSON.stringify(cacheData));
-        } catch (error) {
-            console.warn('无法缓存访问令牌:', error);
-        }
-    }
 
-    /**
-     * 获取缓存的令牌
-     * @returns {Object|null} 缓存的令牌数据
-     */
-    getCachedToken() {
-        try {
-            const cached = localStorage.getItem('proxy_access_token');
-            return cached ? JSON.parse(cached) : null;
-        } catch (error) {
-            console.warn('无法读取缓存的令牌:', error);
-            return null;
-        }
-    }
-
-    /**
-     * 验证令牌是否有效
-     * @param {Object} tokenData - 令牌数据
-     * @returns {boolean} 是否有效
-     */
-    isTokenValid(tokenData) {
-        if (!tokenData || !tokenData.token) {
-            return false;
-        }
-
-        // 检查是否过期
-        if (Date.now() >= tokenData.expiresAt) {
-            return false;
-        }
-
-        // 检查使用次数限制
-        if (tokenData.usedRequests >= tokenData.maxRequests) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * 标记令牌已使用
-     */
-    markTokenUsed() {
-        try {
-            const cached = this.getCachedToken();
-            if (cached) {
-                cached.usedRequests = (cached.usedRequests || 0) + 1;
-                localStorage.setItem('proxy_access_token', JSON.stringify(cached));
-            }
-        } catch (error) {
-            console.warn('无法更新令牌使用计数:', error);
-        }
-    }
 
     /**
      * 记录访问日志和统计
