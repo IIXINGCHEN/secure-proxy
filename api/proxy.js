@@ -437,8 +437,15 @@ function detectContentType(url, responseHeaders, content = null) {
     // 使用响应头中的Content-Type（如果看起来正确）
     if (headerContentType &&
         !headerContentType.includes('text/plain') &&
-        !headerContentType.includes('application/json') &&
-        !headerContentType.includes('text/html')) {
+        !headerContentType.includes('application/json')) {
+
+        // 只有当CSS/JS文件被错误标记为HTML时才排除text/html
+        if (headerContentType.includes('text/html') &&
+            (fileExtension === 'css' || fileExtension === 'js' || fileExtension === 'mjs')) {
+            // CSS/JS文件被错误标记为HTML，使用期望的类型
+            return expectedMimeType;
+        }
+
         return headerContentType;
     }
 
