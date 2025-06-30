@@ -12,36 +12,47 @@
 <body>
     <div class="wrapper">
         <div class="UrlCheck">
-            <div class="row margin">
-                <div class="span10 noFloat textCenter">
-                    <h1 class="splash" id="page-header">
-                        <strong>【安全】</strong>的Vercel反向代理
-                    </h1>  
-                </div>
-                
-                <div class="span10 noFloat">
-                    <div class="searchform">
-                        <input type="text" 
-                               id="input" 
-                               placeholder="请输入要代理的URL (仅支持白名单域名)"
-                               name="domainname">
-                        <a id="submitBtn" title="反向代理">Reverse Proxy</a>
+            <!-- 页面标题 -->
+            <div class="page-header-container">
+                <h1 class="splash" id="page-header">
+                    <strong>安全</strong> Vercel 反向代理
+                </h1>
+                <p style="color: #718096; font-size: 16px; margin: 0 0 32px 0; font-weight: 500; letter-spacing: 0.5px;">
+                    🚀 快速、安全、可靠的网站代理服务
+                </p>
+            </div>
+
+            <!-- 主容器 -->
+            <div class="main-container">
+                    <!-- 主输入容器 -->
+                    <div class="main-input-container">
+                        <div class="searchform">
+                            <input type="text"
+                                   id="input"
+                                   placeholder="请输入要代理的URL (仅支持白名单域名)"
+                                   name="domainname">
+                            <a id="submitBtn" title="反向代理">
+                                <span>Reverse Proxy</span>
+                            </a>
+                        </div>
                     </div>
 
+                    <!-- 信息展示容器 -->
+                    <div class="info-container">
                     <!-- 安全提示区域 -->
                     <div id="security-notice">
                         <div class="security-header">
-                            <span class="security-icon">🔒</span>
-                            <strong>安全提醒</strong>
-                            <span id="security-level">安全模式</span>
+                            <span class="security-icon">🛡️</span>
+                            <strong>安全保障</strong>
+                            <span id="security-level">✅ 安全模式</span>
                         </div>
-                        <div style="font-size: 12px; opacity: 0.9;">
-                            • 本服务仅支持白名单域名，确保访问安全<br>
-                            • 请勿输入敏感信息或私人数据<br>
-                            • 使用前请阅读 <a href="./docs/legal/TERMS_OF_SERVICE.md"
-                                             style="color: #ffd700; text-decoration: underline;"
-                                             target="_blank">使用条款</a><br>
-                            • 所有请求都经过安全验证和日志记录
+                        <div style="font-size: 14px; color: #4a5568; line-height: 1.6;">
+                            🔐 <strong>白名单保护</strong> - 仅支持预审核的安全域名<br>
+                            🚫 <strong>隐私保护</strong> - 不记录敏感信息或私人数据<br>
+                            📋 <strong>使用条款</strong> - 请阅读 <a href="./docs/legal/TERMS_OF_SERVICE.md"
+                                             style="color: #667eea; text-decoration: underline; font-weight: 600;"
+                                             target="_blank">服务条款</a><br>
+                            📊 <strong>安全审计</strong> - 所有请求都经过安全验证和监控
                         </div>
                         <div id="security-details">
                             <div>🛡️ 启用的安全功能：</div>
@@ -54,34 +65,35 @@
                         </div>
                     </div>
 
-                    <!-- 风险警告（动态显示） -->
-                    <div id="risk-warning">
-                        <!-- 风险警告内容将通过JavaScript动态生成 -->
-                    </div>
+                    <!-- 分隔线 -->
+                    <div class="section-divider"></div>
 
                     <!-- 使用说明和示例 -->
-                    <div id="usage-guide" style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #007bff;">
-                        <div style="font-weight: bold; margin-bottom: 10px; color: #007bff;">
-                            📖 使用说明
+                    <div id="usage-guide">
+                        <div style="font-weight: 700; margin-bottom: 16px; color: #4299e1; font-size: 16px;">
+                            📖 使用指南
                         </div>
-                        <div style="font-size: 13px; line-height: 1.5;">
-                            <div style="margin-bottom: 8px;">
-                                <strong>正确格式：</strong> 输入完整的URL地址，包含 http:// 或 https://
+                        <div style="font-size: 14px; line-height: 1.6; color: #4a5568;">
+                            <div style="margin-bottom: 12px;">
+                                <strong style="color: #2d3748;">✅ 正确格式：</strong> 输入完整的URL地址，包含 http:// 或 https://
                             </div>
-                            <div style="margin-bottom: 8px;">
-                                <strong>示例：</strong>
-                                <code style="background: #e9ecef; padding: 2px 6px; border-radius: 3px; font-size: 12px;">
-                                    https://httpbin.org/html
-                                </code>
+                            <div style="margin-bottom: 12px;">
+                                <strong style="color: #2d3748;">🌟 示例：</strong>
+                                <code>https://httpbin.org/html</code>
                             </div>
-                            <div style="margin-bottom: 8px;">
-                                <strong>快速测试：</strong>
+                            <div style="margin-bottom: 12px;">
+                                <strong style="color: #2d3748;">⚡ 快速测试：</strong>
                                 <a href="#" onclick="document.getElementById('input').value='https://httpbin.org/html'; return false;"
-                                   style="color: #007bff; text-decoration: underline; cursor: pointer;">
+                                   style="color: #667eea; text-decoration: underline; cursor: pointer; font-weight: 600;">
                                     点击填入测试URL
                                 </a>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- 风险警告（动态显示） -->
+                    <div id="risk-warning">
+                        <!-- 风险警告内容将通过JavaScript动态生成 -->
                     </div>
 
                     <!-- 支持的域名展示 -->
@@ -98,9 +110,16 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- 消息显示区域 -->
+                    <div id="message-container" class="message-container">
+                        <!-- 消息内容将通过JavaScript动态生成 -->
+                    </div>
                 </div>
-            </div>
         </div>
+
+        <!-- 确保内容完整显示的底部间距 -->
+        <div style="height: 120px;"></div>
     </div>
 
     <!-- 页脚 -->

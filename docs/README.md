@@ -27,16 +27,21 @@
 - **测试服务**: httpbin.org, jsonplaceholder.typicode.com
 
 ### 🚀 技术特点
-- 基于Vercel的无服务器架构
-- 支持HTTP和HTTPS协议
-- 自动安全检查和验证
-- 响应式用户界面
-- 完整的错误处理机制
+- **双平台支持**: 同时支持Vercel和Netlify部署
+- **智能检测**: 自动检测运行环境并调用对应API
+- **无服务器架构**: 基于Edge Functions和Serverless Functions
+- **安全加固**: 多层安全验证和白名单控制
+- **响应式设计**: 支持桌面和移动设备
+- **完整错误处理**: 详细的错误信息和用户友好提示
+- **生产优化**: 自动压缩、缓存和性能优化
 
 ## 🚀 快速部署
 
 ### 一键部署到Vercel
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/import/project?template=https://github.com/souying/vercel-api-proxy)
+
+### 一键部署到Netlify
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/souying/vercel-api-proxy)
 
 ### 手动部署步骤
 

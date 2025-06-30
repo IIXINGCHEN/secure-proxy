@@ -1,0 +1,89 @@
+{
+  "name": "vercel-netlify-proxy",
+  "version": "2.0.0",
+  "description": "安全的反向代理服务 - 支持Vercel和Netlify双平台部署",
+  "main": "index.html",
+  "type": "module",
+  "packageManager": "pnpm@8.15.0",
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "scripts": {
+    "dev": "pnpm run dev:netlify",
+    "dev:netlify": "netlify dev",
+    "dev:vercel": "vercel dev",
+    "build": "pnpm run build:prod",
+    "build:prod": "pnpm run optimize && pnpm run validate",
+    "build:preview": "pnpm run optimize",
+    "optimize": "pnpm run minify:css && pnpm run minify:js",
+    "minify:css": "node scripts/minify-css.js",
+    "minify:js": "node scripts/minify-js.js",
+    "validate": "pnpm run validate:html && pnpm run validate:js",
+    "validate:html": "node scripts/validate-html.js",
+    "validate:js": "node scripts/validate-js.js",
+    "test": "pnpm run test:functions && pnpm run test:frontend",
+    "test:functions": "node scripts/test-functions.js",
+    "test:frontend": "node scripts/test-frontend.js",
+    "deploy:vercel": "vercel --prod",
+    "deploy:netlify": "netlify deploy --prod",
+    "preview:vercel": "vercel",
+    "preview:netlify": "netlify deploy",
+    "clean": "node scripts/clean.js",
+    "setup": "pnpm install && pnpm run validate",
+    "start": "pnpm run dev",
+    "lint": "eslint src/ --ext .js",
+    "format": "prettier --write src/",
+    "check": "pnpm run lint && pnpm run validate"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@netlify/cli": "^17.0.0",
+    "esbuild": "^0.19.0",
+    "eslint": "^8.57.0",
+    "html-minifier": "^4.0.0",
+    "prettier": "^3.2.0",
+    "terser": "^5.27.0",
+    "vercel": "^33.0.0"
+  },
+  "keywords": [
+    "proxy",
+    "reverse-proxy",
+    "vercel",
+    "netlify",
+    "serverless",
+    "edge-functions",
+    "security",
+    "cors",
+    "api-proxy"
+  ],
+  "author": "Secure Proxy Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/souying/vercel-api-proxy.git"
+  },
+  "bugs": {
+    "url": "https://github.com/souying/vercel-api-proxy/issues"
+  },
+  "homepage": "https://github.com/souying/vercel-api-proxy#readme",
+  "files": [
+    "api/",
+    "netlify/",
+    "src/",
+    "docs/",
+    "index.html",
+    "vercel.json",
+    "netlify.toml"
+  ],
+  "pnpm": {
+    "overrides": {
+      "semver": "^7.5.4"
+    }
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ]
+}
