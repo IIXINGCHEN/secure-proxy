@@ -475,8 +475,7 @@ function processHtmlContent(html, baseUrl, proxyHost = '') {
     '        basePath: "' + basePath + '",\n' +
     '        proxyEndpoint: "/api/proxy?url=",\n' +
     '        currentHost: location.hostname\n' +
-    '    };\n'
-
+    '    };\n' +
     '\n' +
     '    function createProxyUrl(paramUrl) {\n' +
     '        if (!paramUrl || typeof paramUrl !== "string") return paramUrl;\n' +
