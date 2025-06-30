@@ -42,12 +42,9 @@ class ProxyHandler {
                 return;
             }
 
-            // 解析URL
-            let protocol, hostname;
+            // 验证URL格式
             try {
-                const urlObj = new URL(inputValue);
-                protocol = urlObj.protocol.slice(0, -1); // 移除末尾的冒号
-                hostname = urlObj.host + urlObj.pathname + urlObj.search + urlObj.hash;
+                new URL(inputValue);
             } catch (error) {
                 this.showError(this.uiConfig.ERROR_MESSAGES.PARSE_ERROR);
                 this.showLoading(false);
@@ -95,7 +92,7 @@ class ProxyHandler {
 
                 // 短暂延迟后在新窗口打开，让用户看到成功消息
                 setTimeout(() => {
-                    const newWindow = window.open(proxyUrl, "_blank", "noopener,noreferrer");
+                    const newWindow = window.open(proxyUrl, "_blank", "noopener");
 
                     if (!newWindow) {
                         // 弹窗被阻止的处理
