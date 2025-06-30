@@ -131,7 +131,14 @@ function detectContentType(url, responseHeaders) {
         'pdf': 'application/pdf',
         'zip': 'application/zip',
         'webmanifest': 'application/manifest+json',
-        'manifest': 'application/manifest+json'
+        'manifest': 'application/manifest+json',
+
+        // WebAssembly
+        'wasm': 'application/wasm',
+
+        // 数据文件
+        'bin': 'application/octet-stream',
+        'data': 'application/octet-stream'
     };
 
     return mimeTypes[ext] || 'application/octet-stream';
@@ -213,6 +220,33 @@ function processHtmlContent(html, baseUrl) {
             }
             return originalOpen.call(this, method, url, ...args);
         };
+
+        // 重写WebAssembly.instantiateStreaming
+        if (window.WebAssembly && WebAssembly.instantiateStreaming) {
+            const originalInstantiateStreaming = WebAssembly.instantiateStreaming;
+            WebAssembly.instantiateStreaming = function(source, importObject) {
+                if (typeof source === 'string' && !source.startsWith('/api/proxy')) {
+                    if (source.startsWith('http://') || source.startsWith('https://')) {
+                        source = '/api/proxy?url=' + encodeURIComponent(source);
+                    } else if (source.startsWith('/')) {
+                        source = '/api/proxy?url=' + encodeURIComponent('${origin}' + source);
+                    } else {
+                        source = '/api/proxy?url=' + encodeURIComponent('${origin}${basePath}' + source);
+                    }
+                    source = fetch(source);
+                }
+                return originalInstantiateStreaming.call(this, source, importObject);
+            };
+        }
+
+        // 禁用ServiceWorker注册（避免路径问题）
+        if ('serviceWorker' in navigator) {
+            const originalRegister = navigator.serviceWorker.register;
+            navigator.serviceWorker.register = function() {
+                console.log('ServiceWorker registration disabled in proxy mode');
+                return Promise.reject(new Error('ServiceWorker disabled in proxy mode'));
+            };
+        }
     })();
     </script>`;
 
@@ -230,20 +264,28 @@ function processHtmlContent(html, baseUrl) {
         // CSS中的url()
         { regex: /url\(["']?([^"')]+)["']?\)/g, attr: 'url' },
 
-        // JavaScript中的字符串URL（谨慎处理）
-        { regex: /"([^"]*\.(css|js|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot|ico|webp|mp3|mp4|webm|ogg|pdf|zip))"/g, attr: 'js-string' }
+        // JavaScript中的字符串URL（包含更多文件类型）
+        { regex: /"([^"]*\.(css|js|mjs|ts|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot|ico|webp|mp3|mp4|webm|ogg|pdf|zip|wasm|json|webmanifest))"/g, attr: 'js-string' },
+
+        // 特殊处理：manifest文件
+        { regex: /manifest=["']([^"']+)["']/g, attr: 'manifest' }
     ];
 
     patterns.forEach(pattern => {
         processedHtml = processedHtml.replace(pattern.regex, (match, url) => {
             // 跳过已经是代理URL的链接
-            if (url.includes('/api/proxy') || url.startsWith('data:') || url.startsWith('blob:') || url.startsWith('javascript:') || url.startsWith('mailto:') || url.startsWith('tel:')) {
+            if (url.includes('/api/proxy') || url.startsWith('data:') || url.startsWith('blob:') || url.startsWith('javascript:') || url.startsWith('mailto:') || url.startsWith('tel:') || url.startsWith('#')) {
                 return match;
             }
 
-            // 跳过外部CDN（可选，根据需要调整）
-            if (url.includes('cdn.') || url.includes('cdnjs.') || url.includes('unpkg.') || url.includes('jsdelivr.')) {
-                return match;
+            // 跳过外部CDN（但保留某些需要代理的CDN）
+            if (url.includes('cdnjs.cloudflare.com') || url.includes('unpkg.com') || url.includes('jsdelivr.net')) {
+                return match; // 这些CDN通常可以直接访问
+            }
+
+            // 特殊处理：某些CDN需要代理
+            if (url.includes('npm.elemecdn.com')) {
+                // 保持原样，让其通过代理
             }
 
             const proxyUrl = createProxyUrl(url);
