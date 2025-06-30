@@ -63,25 +63,45 @@ class ProxyHandler {
 
 
 
-            // 在当前页面中显示代理内容
+            // 在新窗口中打开代理页面，显示完整内容
             try {
-                // 显示跳转提示
+                // 显示准备提示
                 this.showSuccess({
-                    title: '🚀 正在跳转到代理页面',
-                    description: '即将显示完整的页面内容...'
+                    title: '🚀 正在准备代理页面',
+                    description: '即将在新窗口中显示完整的页面内容...'
                 });
 
-                // 短暂延迟后跳转，让用户看到成功消息
+                // 短暂延迟后在新窗口打开，让用户看到成功消息
                 setTimeout(() => {
-                    window.location.href = proxyUrl;
-                }, 1000);
+                    const newWindow = window.open(proxyUrl, "_blank", "noopener,noreferrer");
+
+                    if (!newWindow) {
+                        // 弹窗被阻止的处理
+                        this.showError({
+                            title: '🚫 弹窗被阻止',
+                            description: '请允许弹窗或手动复制链接访问。链接已复制到剪贴板。'
+                        });
+
+                        // 尝试复制链接到剪贴板
+                        this.copyToClipboard(proxyUrl);
+                    } else {
+                        // 成功打开新窗口
+                        this.showSuccess({
+                            title: '✅ 代理页面已打开',
+                            description: '新窗口中将显示完整的页面内容，请查看新标签页。'
+                        });
+                    }
+                }, 800);
 
             } catch (error) {
-                console.error('页面跳转失败:', error);
+                console.error('打开新窗口失败:', error);
                 this.showError({
-                    title: '🔗 跳转失败',
-                    description: '无法跳转到代理页面，请检查URL是否正确'
+                    title: '🔗 打开失败',
+                    description: '无法打开新窗口，请检查浏览器设置或手动访问链接。'
                 });
+
+                // 备用方案：复制链接
+                this.copyToClipboard(proxyUrl);
             }
             
             this.showLoading(false);
@@ -562,5 +582,40 @@ class ProxyHandler {
         this.saveRateLimitData(sessionId, rateLimitData);
 
         return { allowed: true };
+    }
+
+    /**
+     * 复制文本到剪贴板
+     * @param {string} text - 要复制的文本
+     */
+    async copyToClipboard(text) {
+        try {
+            if (navigator.clipboard && window.isSecureContext) {
+                // 使用现代 Clipboard API
+                await navigator.clipboard.writeText(text);
+                console.log('链接已复制到剪贴板:', text);
+            } else {
+                // 回退方案：使用传统方法
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-999999px';
+                textArea.style.top = '-999999px';
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+
+                try {
+                    document.execCommand('copy');
+                    console.log('链接已复制到剪贴板 (传统方法):', text);
+                } catch (err) {
+                    console.warn('复制到剪贴板失败:', err);
+                } finally {
+                    document.body.removeChild(textArea);
+                }
+            }
+        } catch (error) {
+            console.warn('复制到剪贴板失败:', error);
+        }
     }
 }
