@@ -19,6 +19,8 @@ const ALLOWED_DOMAINS = [
     'translate.googleapis.com',
     'httpbin.org',
     'jsonplaceholder.typicode.com',
+    // 音乐播放器相关域名
+    'player.imixc.top',
     '*.imixc.top',
     '*.ixingchen.top'
 ];
@@ -309,7 +311,10 @@ function processHtmlContent(html, baseUrl, proxyHost = '') {
             } else if (trimmedUrl.startsWith('/')) {
                 resolvedUrl = origin + trimmedUrl;
             } else {
-                resolvedUrl = new URL(trimmedUrl, origin + basePath).href;
+                // 处理相对路径：./file.js, ../file.js, file.js
+                // 使用目标网站的origin和当前页面路径作为基础URL
+                const baseForRelative = origin + (pathname.endsWith('/') ? pathname : pathname + '/');
+                resolvedUrl = new URL(trimmedUrl, baseForRelative).href;
             }
 
             // 防止递归代理 - 使用传入的代理主机名
@@ -332,195 +337,18 @@ function processHtmlContent(html, baseUrl, proxyHost = '') {
 
     let processedHtml = html;
 
-    // 第一步：注入base标签
+    // 第一步：注入base标签 - 设置为目标网站的origin，确保相对路径正确解析
     if (!processedHtml.includes('<base')) {
-        const baseTag = `<base href="${origin}${basePath}">`;
+        // 重要：base标签必须指向目标网站，不是代理URL
+        // 这样相对路径会被浏览器解析为目标网站的路径，然后被我们的JavaScript拦截并重写
+        const baseTag = `<base href="${origin}/">`;
         const headMatch = processedHtml.match(/<head[^>]*>/i);
         if (headMatch) {
             processedHtml = processedHtml.replace(/<head[^>]*>/i, `${headMatch[0]}\n    ${baseTag}`);
         }
     }
 
-    // 第二步：注入高级代理脚本
-    const proxyScript = `
-    <script>
-    (function() {
-        'use strict';
-
-        const PROXY_CONFIG = {
-            origin: '${origin}',
-            basePath: '${basePath}',
-            proxyEndpoint: '/api/proxy?url=',
-            currentHost: location.hostname
-        };
-
-        function createProxyUrl(url) {
-            if (!url || typeof url !== 'string') return url;
-
-            const trimmedUrl = url.trim();
-            if (trimmedUrl.startsWith('data:') ||
-                trimmedUrl.startsWith('blob:') ||
-                trimmedUrl.startsWith('javascript:') ||
-                trimmedUrl.startsWith('mailto:') ||
-                trimmedUrl.startsWith('tel:') ||
-                trimmedUrl.startsWith('#') ||
-                trimmedUrl.includes('/api/proxy')) {
-                return url;
-            }
-
-            // 跳过CDN资源，直接访问
-            const cdnDomains = [
-                'npm.elemecdn.com',
-                'cdnjs.cloudflare.com',
-                'unpkg.com',
-                'jsdelivr.net',
-                'fonts.googleapis.com',
-                'fonts.gstatic.com'
-            ];
-
-            if (cdnDomains.some(cdn => trimmedUrl.includes(cdn))) {
-                return url;
-            }
-
-            try {
-                let resolvedUrl;
-                if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) {
-                    resolvedUrl = trimmedUrl;
-                } else if (trimmedUrl.startsWith('//')) {
-                    resolvedUrl = location.protocol + trimmedUrl;
-                } else if (trimmedUrl.startsWith('/')) {
-                    resolvedUrl = PROXY_CONFIG.origin + trimmedUrl;
-                } else {
-                    resolvedUrl = new URL(trimmedUrl, PROXY_CONFIG.origin + PROXY_CONFIG.basePath).href;
-                }
-
-                const resolvedUrlObj = new URL(resolvedUrl);
-                if (resolvedUrlObj.hostname.includes('vercel.app') ||
-                    resolvedUrlObj.hostname.includes('localhost') ||
-                    resolvedUrl.includes('/api/proxy') ||
-                    resolvedUrlObj.hostname === PROXY_CONFIG.currentHost) {
-                    return url;
-                }
-
-                return PROXY_CONFIG.proxyEndpoint + encodeURIComponent(resolvedUrl);
-            } catch (e) {
-                return url;
-            }
-        }
-
-        // 重写fetch API
-        const originalFetch = window.fetch;
-        window.fetch = function(input, init) {
-            let url = input;
-            if (input instanceof Request) {
-                url = input.url;
-            }
-
-            const proxyUrl = createProxyUrl(url);
-            if (proxyUrl !== url) {
-                if (input instanceof Request) {
-                    return originalFetch.call(this, new Request(proxyUrl, input), init);
-                } else {
-                    return originalFetch.call(this, proxyUrl, init);
-                }
-            }
-
-            return originalFetch.call(this, input, init);
-        };
-
-        // 重写XMLHttpRequest
-        const originalOpen = XMLHttpRequest.prototype.open;
-        XMLHttpRequest.prototype.open = function(method, url, async, user, password) {
-            const proxyUrl = createProxyUrl(url);
-            return originalOpen.call(this, method, proxyUrl, async, user, password);
-        };
-
-        // 重写WebAssembly.instantiateStreaming
-        if (window.WebAssembly && WebAssembly.instantiateStreaming) {
-            const originalInstantiateStreaming = WebAssembly.instantiateStreaming;
-            WebAssembly.instantiateStreaming = function(source, importObject) {
-                if (typeof source === 'string') {
-                    const proxyUrl = createProxyUrl(source);
-                    if (proxyUrl !== source) {
-                        source = fetch(proxyUrl);
-                    }
-                } else if (source instanceof Promise) {
-                    source = source.then(response => {
-                        if (response instanceof Response) {
-                            const url = response.url;
-                            const proxyUrl = createProxyUrl(url);
-                            if (proxyUrl !== url) {
-                                return fetch(proxyUrl);
-                            }
-                        }
-                        return response;
-                    });
-                }
-                return originalInstantiateStreaming.call(this, source, importObject);
-            };
-        }
-
-        // 重写动态import
-        if (window.import) {
-            const originalImport = window.import;
-            window.import = function(specifier) {
-                const proxyUrl = createProxyUrl(specifier);
-                return originalImport.call(this, proxyUrl);
-            };
-        }
-
-        // 禁用ServiceWorker（避免路径冲突）
-        if ('serviceWorker' in navigator) {
-            const originalRegister = navigator.serviceWorker.register;
-            navigator.serviceWorker.register = function() {
-                console.warn('ServiceWorker registration disabled in proxy mode');
-                return Promise.reject(new Error('ServiceWorker disabled in proxy mode'));
-            };
-        }
-
-        // 重写Image构造函数
-        const OriginalImage = window.Image;
-        window.Image = function(width, height) {
-            const img = new OriginalImage(width, height);
-            const originalSrcSetter = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src').set;
-            Object.defineProperty(img, 'src', {
-                set: function(value) {
-                    const proxyUrl = createProxyUrl(value);
-                    originalSrcSetter.call(this, proxyUrl);
-                },
-                get: function() {
-                    return this.getAttribute('src');
-                }
-            });
-            return img;
-        };
-
-        // 重写Audio构造函数
-        if (window.Audio) {
-            const OriginalAudio = window.Audio;
-            window.Audio = function(src) {
-                const audio = new OriginalAudio();
-                if (src) {
-                    audio.src = createProxyUrl(src);
-                }
-                return audio;
-            };
-        }
-
-        console.log('Proxy script initialized successfully');
-    })();
-    </script>`;
-
-    // 注入脚本到head标签
-    const headCloseMatch = processedHtml.match(/<\/head>/i);
-    if (headCloseMatch) {
-        processedHtml = processedHtml.replace(/<\/head>/i, `${proxyScript}\n$&`);
-    } else {
-        // 如果没有head标签，在body开始前注入
-        processedHtml = processedHtml.replace(/<body[^>]*>/i, `${proxyScript}\n$&`);
-    }
-
-    // 第三步：重写HTML属性中的URL
+    // 第二步：重写HTML属性中的URL（先重写，再注入脚本）
     const urlPatterns = [
         // 基础HTML属性
         { regex: /\bhref\s*=\s*["']([^"']+)["']/gi, attr: 'href' },
@@ -542,12 +370,9 @@ function processHtmlContent(html, baseUrl, proxyHost = '') {
         { regex: /background-image\s*:\s*url\s*\(\s*["']?([^"')]+)["']?\s*\)/gi, attr: 'css-bg' },
         { regex: /background\s*:\s*url\s*\(\s*["']?([^"')]+)["']?\s*\)/gi, attr: 'css-bg-short' },
 
-        // JavaScript字符串中的URL（只匹配绝对URL，避免相对路径）
-        { regex: /"(https?:\/\/[^"]*\.(css|js|mjs|ts|json|wasm|png|jpg|jpeg|gif|svg|webp|ico|woff|woff2|ttf|eot|otf|mp3|mp4|webm|ogg|avi|mov|pdf|zip|rar|7z|tar|gz|webmanifest|xml|txt))"/gi, attr: 'js-url' },
-        { regex: /'(https?:\/\/[^']*\.(css|js|mjs|ts|json|wasm|png|jpg|jpeg|gif|svg|webp|ico|woff|woff2|ttf|eot|otf|mp3|mp4|webm|ogg|avi|mov|pdf|zip|rar|7z|tar|gz|webmanifest|xml|txt))'/gi, attr: 'js-url-single' },
-
-        // 模板字符串中的URL（只匹配绝对URL）
-        { regex: /\`(https?:\/\/[^`]*\.(css|js|mjs|ts|json|wasm|png|jpg|jpeg|gif|svg|webp|ico|woff|woff2|ttf|eot|otf|mp3|mp4|webm|ogg|avi|mov|pdf|zip|rar|7z|tar|gz|webmanifest|xml|txt))\`/gi, attr: 'template-url' }
+        // JavaScript字符串中的URL重写已完全禁用
+        // 原因：会错误地重写JavaScript代码中的变量名和函数参数，导致语法错误
+        // 解决方案：通过运行时JavaScript API重写来处理动态URL，而不是静态正则表达式重写
     ];
 
     // 处理每个URL模式
@@ -639,6 +464,148 @@ function processHtmlContent(html, baseUrl, proxyHost = '') {
         });
     });
 
+    // 第三步：在URL重写完成后注入代理脚本（使用字符串拼接避免被重写）
+    const proxyScript =
+    '<script>\n' +
+    '(function() {\n' +
+    '    "use strict";\n' +
+    '\n' +
+    '    const PROXY_CONFIG = {\n' +
+    '        origin: "' + origin + '",\n' +
+    '        basePath: "' + basePath + '",\n' +
+    '        proxyEndpoint: "/api/proxy?url=",\n' +
+    '        currentHost: location.hostname\n' +
+    '    };\n'
+
+    '\n' +
+    '    function createProxyUrl(paramUrl) {\n' +
+    '        if (!paramUrl || typeof paramUrl !== "string") return paramUrl;\n' +
+    '\n' +
+    '        const trimmedUrl = paramUrl.trim();\n' +
+    '        if (trimmedUrl.startsWith("data:") ||\n' +
+    '            trimmedUrl.startsWith("blob:") ||\n' +
+    '            trimmedUrl.startsWith("javascript:") ||\n' +
+    '            trimmedUrl.startsWith("mailto:") ||\n' +
+    '            trimmedUrl.startsWith("tel:") ||\n' +
+    '            trimmedUrl.startsWith("#") ||\n' +
+    '            trimmedUrl.includes("/api/proxy")) {\n' +
+    '            return paramUrl;\n' +
+    '        }\n' +
+    '\n' +
+    '        const cdnDomains = [\n' +
+    '            "npm.elemecdn.com",\n' +
+    '            "cdnjs.cloudflare.com",\n' +
+    '            "unpkg.com",\n' +
+    '            "jsdelivr.net",\n' +
+    '            "fonts.googleapis.com",\n' +
+    '            "fonts.gstatic.com"\n' +
+    '        ];\n' +
+    '\n' +
+    '        if (cdnDomains.some(function(cdn) { return trimmedUrl.includes(cdn); })) {\n' +
+    '            return paramUrl;\n' +
+    '        }\n' +
+    '\n' +
+    '        try {\n' +
+    '            var resolvedUrl;\n' +
+    '            if (trimmedUrl.startsWith("http://") || trimmedUrl.startsWith("https://")) {\n' +
+    '                resolvedUrl = trimmedUrl;\n' +
+    '            } else if (trimmedUrl.startsWith("//")) {\n' +
+    '                resolvedUrl = location.protocol + trimmedUrl;\n' +
+    '            } else if (trimmedUrl.startsWith("/")) {\n' +
+    '                resolvedUrl = PROXY_CONFIG.origin + trimmedUrl;\n' +
+    '            } else {\n' +
+    '                var currentPath = location.pathname.endsWith("/") ? location.pathname : location.pathname + "/";\n' +
+    '                resolvedUrl = new URL(trimmedUrl, PROXY_CONFIG.origin + currentPath).href;\n' +
+    '            }\n' +
+    '\n' +
+    '            var resolvedUrlObj = new URL(resolvedUrl);\n' +
+    '            if (resolvedUrlObj.hostname.includes("vercel.app") ||\n' +
+    '                resolvedUrlObj.hostname.includes("localhost") ||\n' +
+    '                resolvedUrl.includes("/api/proxy") ||\n' +
+    '                resolvedUrlObj.hostname === PROXY_CONFIG.currentHost) {\n' +
+    '                return paramUrl;\n' +
+    '            }\n' +
+    '\n' +
+    '            return PROXY_CONFIG.proxyEndpoint + encodeURIComponent(resolvedUrl);\n' +
+    '        } catch (e) {\n' +
+    '            return paramUrl;\n' +
+    '        }\n' +
+    '    }\n'
+
+    '\n' +
+    '    var originalFetch = window.fetch;\n' +
+    '    window.fetch = function(input, init) {\n' +
+    '        var paramUrl = input;\n' +
+    '        if (input instanceof Request) {\n' +
+    '            paramUrl = input.url;\n' +
+    '        }\n' +
+    '\n' +
+    '        var proxyUrl = createProxyUrl(paramUrl);\n' +
+    '        if (proxyUrl !== paramUrl) {\n' +
+    '            if (input instanceof Request) {\n' +
+    '                return originalFetch.call(this, new Request(proxyUrl, input), init);\n' +
+    '            } else {\n' +
+    '                return originalFetch.call(this, proxyUrl, init);\n' +
+    '            }\n' +
+    '        }\n' +
+    '\n' +
+    '        return originalFetch.call(this, input, init);\n' +
+    '    };\n' +
+    '\n' +
+    '    var originalOpen = XMLHttpRequest.prototype.open;\n' +
+    '    XMLHttpRequest.prototype.open = function(method, paramUrl, async, user, password) {\n' +
+    '        var proxyUrl = createProxyUrl(paramUrl);\n' +
+    '        return originalOpen.call(this, method, proxyUrl, async, user, password);\n' +
+    '    };\n'
+
+    '\n' +
+    '    if (window.WebAssembly && WebAssembly.instantiateStreaming) {\n' +
+    '        var originalInstantiateStreaming = WebAssembly.instantiateStreaming;\n' +
+    '        WebAssembly.instantiateStreaming = function(source, importObject) {\n' +
+    '            if (typeof source === "string") {\n' +
+    '                var proxyUrl = createProxyUrl(source);\n' +
+    '                if (proxyUrl !== source) {\n' +
+    '                    source = fetch(proxyUrl);\n' +
+    '                }\n' +
+    '            } else if (source instanceof Promise) {\n' +
+    '                source = source.then(function(response) {\n' +
+    '                    if (response instanceof Response) {\n' +
+    '                        var responseUrl = response.url;\n' +
+    '                        var proxyUrl = createProxyUrl(responseUrl);\n' +
+    '                        if (proxyUrl !== responseUrl) {\n' +
+    '                            return fetch(proxyUrl);\n' +
+    '                        }\n' +
+    '                    }\n' +
+    '                    return response;\n' +
+    '                });\n' +
+    '            }\n' +
+    '            return originalInstantiateStreaming.call(this, source, importObject);\n' +
+    '        };\n' +
+    '    }\n' +
+    '\n' +
+    '    if ("serviceWorker" in navigator) {\n' +
+    '        var originalRegister = navigator.serviceWorker.register;\n' +
+    '        navigator.serviceWorker.register = function() {\n' +
+    '            console.warn("ServiceWorker registration disabled in proxy mode");\n' +
+    '            return Promise.reject(new Error("ServiceWorker disabled in proxy mode"));\n' +
+    '        };\n' +
+    '    }\n' +
+    '\n' +
+    '    console.log("Proxy script initialized successfully");\n' +
+    '})();\n' +
+    '</script>';
+
+    // 注入脚本到head标签
+    const headCloseMatch = processedHtml.match(/<\/head>/i);
+    if (headCloseMatch) {
+        processedHtml = processedHtml.replace(/<\/head>/i, proxyScript + '\n</head>');
+    } else {
+        // 如果没有head标签，在body开始前注入
+        processedHtml = processedHtml.replace(/<body[^>]*>/i, function(match) {
+            return proxyScript + '\n' + match;
+        });
+    }
+
     return processedHtml;
 }
 
@@ -700,6 +667,79 @@ export default async function handler(request) {
         const targetUrl = requestUrl.searchParams.get('url');
 
         if (!targetUrl) {
+            // 检测是否是搜索查询或其他特殊情况
+            const searchQuery = requestUrl.searchParams.get('q');
+            const hasSearchParams = requestUrl.searchParams.has('q') ||
+                                  requestUrl.searchParams.has('search') ||
+                                  requestUrl.searchParams.has('query');
+
+            if (hasSearchParams) {
+                // 用户可能想要搜索，提供友好的指导
+                return new Response(`
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>使用说明 - 代理服务</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+               max-width: 800px; margin: 50px auto; padding: 20px; line-height: 1.6; }
+        .container { background: #f8f9fa; padding: 30px; border-radius: 10px; border-left: 4px solid #007bff; }
+        .error { color: #dc3545; font-weight: bold; }
+        .info { color: #28a745; margin: 20px 0; }
+        .example { background: #e9ecef; padding: 15px; border-radius: 5px; font-family: monospace; margin: 10px 0; }
+        .search-hint { background: #fff3cd; padding: 15px; border-radius: 5px; border-left: 4px solid #ffc107; margin: 20px 0; }
+        a { color: #007bff; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 检测到搜索查询</h1>
+        <p class="error">错误：缺少目标URL参数</p>
+
+        <div class="search-hint">
+            <h3>💡 您似乎想要进行搜索</h3>
+            <p>如果您想要搜索"${searchQuery || '内容'}"，请使用以下方式：</p>
+            <div class="example">
+                ${searchQuery ?
+                  `<a href="/api/proxy?url=${encodeURIComponent('https://www.google.com/search?q=' + encodeURIComponent(searchQuery))}" target="_blank">
+                     🔗 在Google中搜索"${searchQuery}"
+                   </a>` :
+                  '请先返回主页面输入要搜索的内容'
+                }
+            </div>
+        </div>
+
+        <div class="info">
+            <h3>📋 正确的使用方法</h3>
+            <p>代理服务需要完整的目标URL，格式如下：</p>
+            <div class="example">
+                /api/proxy?url=https://example.com/path
+            </div>
+
+            <h4>示例：</h4>
+            <div class="example">
+                <a href="/api/proxy?url=${encodeURIComponent('https://httpbin.org/html')}" target="_blank">
+                    /api/proxy?url=https://httpbin.org/html
+                </a>
+            </div>
+        </div>
+
+        <p><a href="/">← 返回主页面</a></p>
+    </div>
+</body>
+</html>`, {
+                    status: 400,
+                    headers: {
+                        'Content-Type': 'text/html; charset=utf-8',
+                        'Cache-Control': 'no-cache'
+                    }
+                });
+            }
+
+            // 普通的缺少URL参数错误
             return createErrorResponse({
                 error: 'Missing target URL parameter',
                 message: 'Please provide a valid URL in the "url" parameter',

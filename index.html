@@ -59,6 +59,31 @@
                         <!-- 风险警告内容将通过JavaScript动态生成 -->
                     </div>
 
+                    <!-- 使用说明和示例 -->
+                    <div id="usage-guide" style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #007bff;">
+                        <div style="font-weight: bold; margin-bottom: 10px; color: #007bff;">
+                            📖 使用说明
+                        </div>
+                        <div style="font-size: 13px; line-height: 1.5;">
+                            <div style="margin-bottom: 8px;">
+                                <strong>正确格式：</strong> 输入完整的URL地址，包含 http:// 或 https://
+                            </div>
+                            <div style="margin-bottom: 8px;">
+                                <strong>示例：</strong>
+                                <code style="background: #e9ecef; padding: 2px 6px; border-radius: 3px; font-size: 12px;">
+                                    https://httpbin.org/html
+                                </code>
+                            </div>
+                            <div style="margin-bottom: 8px;">
+                                <strong>快速测试：</strong>
+                                <a href="#" onclick="document.getElementById('input').value='https://httpbin.org/html'; return false;"
+                                   style="color: #007bff; text-decoration: underline; cursor: pointer;">
+                                    点击填入测试URL
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- 支持的域名展示 -->
                     <div id="supported-domains">
                         <div class="domain-container">

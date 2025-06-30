@@ -1,6 +1,9 @@
 {
   "rewrites": [
-    { "source": "/test-proxy", "destination": "/src/pages/test-proxy.html" }
+    { "source": "/test-proxy", "destination": "/src/pages/test-proxy.html" },
+    { "source": "/imgs/icons/(.*)", "destination": "/public/icons/$1" },
+    { "source": "/api/sw.js", "destination": "/public/sw.js" },
+    { "source": "/manifest.json", "destination": "/public/manifest.json" }
   ],
   "headers": [
     {
