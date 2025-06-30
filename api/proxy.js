@@ -32,18 +32,18 @@ const ALLOWED_DOMAINS = [
     '*.ixingchen.top'
 ];
 
-// 防盗链配置
+// 防盗链配置 - 防止直接URL访问
 const ANTI_HOTLINK_CONFIG = {
-    ENABLED: false,  // 暂时禁用防盗链验证
+    ENABLED: true,   // 启用防盗链验证
     ALLOWED_REFERERS: [
         'secure-proxy-seven.vercel.app',
         'localhost',
         '127.0.0.1',
         'xy.ixingchen.top'
     ],
-    REQUIRE_TOKEN: false,  // 暂时禁用令牌验证
-    TOKEN_EXPIRY: 3600000, // 1小时
-    MAX_REQUESTS_PER_TOKEN: 100
+    REQUIRE_TOKEN: true,   // 启用令牌验证
+    TOKEN_EXPIRY: 300000,  // 5分钟有效期，增强安全性
+    MAX_REQUESTS_PER_TOKEN: 10  // 每个令牌最多10次请求
 };
 
 // 访问令牌存储（生产环境应使用Redis等外部存储）
@@ -986,15 +986,103 @@ export default async function handler(request) {
             }, 400);
         }
 
-        // 防盗链验证
+        // 防盗链验证 - 防止直接URL访问
         if (!validateReferer(request)) {
-            return createErrorResponse({
-                error: 'Access denied',
-                message: 'Direct access to proxy URLs is not allowed. Please access through the authorized website.',
-                code: 'HOTLINK_PROTECTION',
-                timestamp: new Date().toISOString(),
-                requestId: generateRequestId()
-            }, 403);
+            return new Response(`
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>访问被拒绝 - 安全代理服务</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        .icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+        .message {
+            color: #666;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        .security-info {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">🛡️</div>
+        <h1>访问被拒绝</h1>
+        <div class="message">
+            <p><strong>检测到非法的直接URL访问！</strong></p>
+            <p>为了安全起见，我们禁止直接拼接代理URL进行访问。</p>
+            <p>请通过正确的方式使用代理服务：</p>
+            <ol style="text-align: left; display: inline-block;">
+                <li>访问代理服务主页</li>
+                <li>在输入框中输入要代理的网站URL</li>
+                <li>点击"Reverse Proxy"按钮</li>
+            </ol>
+        </div>
+
+        <a href="/" class="btn">🏠 返回代理服务主页</a>
+
+        <div class="security-info">
+            <strong>🔒 安全提示</strong><br>
+            此限制是为了防止恶意使用和保护服务安全。<br>
+            如果您是正常用户，请使用正确的访问方式。
+        </div>
+    </div>
+</body>
+</html>`, {
+                status: 403,
+                headers: {
+                    'Content-Type': 'text/html; charset=utf-8',
+                    'Cache-Control': 'no-cache, no-store, must-revalidate'
+                }
+            });
         }
 
         // 访问令牌验证

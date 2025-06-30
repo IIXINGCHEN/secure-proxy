@@ -54,9 +54,31 @@ class ProxyHandler {
                 return;
             }
 
-            // 构建代理URL - 暂时不使用令牌验证
+            // 获取访问令牌 - 防止直接URL访问
+            let accessToken;
+            try {
+                accessToken = await this.getAccessToken();
+                if (!accessToken) {
+                    this.showError({
+                        title: '🔐 安全验证失败',
+                        description: '无法获取访问令牌，请刷新页面重试'
+                    });
+                    this.showLoading(false);
+                    return;
+                }
+            } catch (error) {
+                console.error('获取访问令牌失败:', error);
+                this.showError({
+                    title: '🔐 安全验证失败',
+                    description: '安全验证过程中发生错误，请刷新页面重试'
+                });
+                this.showLoading(false);
+                return;
+            }
+
+            // 构建代理URL - 包含安全令牌
             const baseUrl = location.origin;
-            const proxyUrl = `${baseUrl}/api/proxy?url=${encodeURIComponent(inputValue)}`;
+            const proxyUrl = `${baseUrl}/api/proxy?url=${encodeURIComponent(inputValue)}&token=${accessToken}`;
 
             // 记录访问日志
             this.logAccess(inputValue, proxyUrl);
@@ -85,7 +107,9 @@ class ProxyHandler {
                         // 尝试复制链接到剪贴板
                         this.copyToClipboard(proxyUrl);
                     } else {
-                        // 成功打开新窗口
+                        // 成功打开新窗口，标记令牌已使用
+                        this.markTokenUsed();
+
                         this.showSuccess({
                             title: '✅ 代理页面已打开',
                             description: '新窗口中将显示完整的页面内容，请查看新标签页。'
