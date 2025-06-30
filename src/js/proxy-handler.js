@@ -63,21 +63,25 @@ class ProxyHandler {
 
 
 
-            // 尝试在新窗口中打开代理页面
+            // 在当前页面中显示代理内容
             try {
-                const newWindow = window.open(proxyUrl, "_blank", "noopener,noreferrer");
-                if (!newWindow) {
-                    this.showError(this.uiConfig.ERROR_MESSAGES.POPUP_BLOCKED);
-                    this.showLoading(false);
-                    return;
-                }
+                // 显示跳转提示
+                this.showSuccess({
+                    title: '🚀 正在跳转到代理页面',
+                    description: '即将显示完整的页面内容...'
+                });
 
-                // 显示成功消息
-                this.showSuccess(this.uiConfig.SUCCESS_MESSAGES.PROXY_CREATED);
+                // 短暂延迟后跳转，让用户看到成功消息
+                setTimeout(() => {
+                    window.location.href = proxyUrl;
+                }, 1000);
 
             } catch (error) {
-                console.error('打开窗口失败:', error);
-                this.showError(this.uiConfig.ERROR_MESSAGES.POPUP_BLOCKED);
+                console.error('页面跳转失败:', error);
+                this.showError({
+                    title: '🔗 跳转失败',
+                    description: '无法跳转到代理页面，请检查URL是否正确'
+                });
             }
             
             this.showLoading(false);
