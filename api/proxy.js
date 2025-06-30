@@ -27,14 +27,14 @@ const ALLOWED_DOMAINS = [
 
 // 防盗链配置
 const ANTI_HOTLINK_CONFIG = {
-    ENABLED: true,
+    ENABLED: false,  // 暂时禁用防盗链验证
     ALLOWED_REFERERS: [
         'secure-proxy-seven.vercel.app',
         'localhost',
         '127.0.0.1',
         'xy.ixingchen.top'
     ],
-    REQUIRE_TOKEN: true,
+    REQUIRE_TOKEN: false,  // 暂时禁用令牌验证
     TOKEN_EXPIRY: 3600000, // 1小时
     MAX_REQUESTS_PER_TOKEN: 100
 };
