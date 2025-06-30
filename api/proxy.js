@@ -82,14 +82,36 @@ function isAllowedDomain(hostname) {
  * 智能内容类型检测
  */
 function detectContentType(url, responseHeaders) {
-    // 优先使用响应头中的Content-Type
+    // 优先使用响应头中的Content-Type，但要验证其正确性
     const headerContentType = responseHeaders.get('content-type');
+
+    // 根据URL扩展名推断期望的类型
+    const ext = url.split('.').pop()?.toLowerCase();
+    const expectedMimeTypes = {
+        'css': 'text/css',
+        'js': 'application/javascript',
+        'mjs': 'application/javascript',
+        'wasm': 'application/wasm',
+        'json': 'application/json'
+    };
+
+    const expectedType = expectedMimeTypes[ext];
+
+    // 如果响应头的类型与期望不符（比如CSS返回JSON），使用期望类型
+    if (headerContentType && expectedType) {
+        if (headerContentType.includes('application/json') && expectedType !== 'application/json') {
+            console.warn(`MIME type mismatch for ${url}: got ${headerContentType}, expected ${expectedType}`);
+            return expectedType + '; charset=utf-8';
+        }
+    }
+
+    // 使用响应头中的Content-Type
     if (headerContentType) {
         return headerContentType;
     }
 
-    // 根据URL扩展名推断
-    const ext = url.split('.').pop()?.toLowerCase();
+    // 根据URL扩展名推断（如果前面没有处理）
+    const fileExt = url.split('.').pop()?.toLowerCase();
     const mimeTypes = {
         // 文档类型
         'html': 'text/html; charset=utf-8',
@@ -141,7 +163,7 @@ function detectContentType(url, responseHeaders) {
         'data': 'application/octet-stream'
     };
 
-    return mimeTypes[ext] || 'application/octet-stream';
+    return mimeTypes[fileExt] || 'application/octet-stream';
 }
 
 
@@ -186,6 +208,17 @@ function processHtmlContent(html, baseUrl) {
         const baseTag = `<base href="${origin}${basePath}">`;
         processedHtml = processedHtml.replace(/<head[^>]*>/i, `$&\n    ${baseTag}`);
     }
+
+    // 修复manifest文件中的相对路径
+    processedHtml = processedHtml.replace(/<link[^>]*rel=["']manifest["'][^>]*>/gi, (match) => {
+        return match.replace(/href=["']([^"']+)["']/g, (hrefMatch, manifestUrl) => {
+            if (!manifestUrl.startsWith('http') && !manifestUrl.includes('/api/proxy')) {
+                const fullManifestUrl = createProxyUrl(manifestUrl);
+                return `href="${fullManifestUrl}"`;
+            }
+            return hrefMatch;
+        });
+    });
 
     // 注入代理脚本来处理动态加载
     const proxyScript = `
@@ -278,14 +311,19 @@ function processHtmlContent(html, baseUrl) {
                 return match;
             }
 
-            // 跳过外部CDN（但保留某些需要代理的CDN）
-            if (url.includes('cdnjs.cloudflare.com') || url.includes('unpkg.com') || url.includes('jsdelivr.net')) {
-                return match; // 这些CDN通常可以直接访问
+            // 跳过当前代理域名的递归引用
+            if (url.includes('secure-proxy-seven.vercel.app')) {
+                return match;
             }
 
-            // 特殊处理：某些CDN需要代理
-            if (url.includes('npm.elemecdn.com')) {
-                // 保持原样，让其通过代理
+            // 跳过外部CDN（这些通常可以直接访问）
+            if (url.includes('cdnjs.cloudflare.com') || url.includes('unpkg.com') || url.includes('jsdelivr.net')) {
+                return match;
+            }
+
+            // 特殊处理：某些CDN保持直接访问
+            if (url.includes('npm.elemecdn.com') || url.includes('fonts.googleapis.com') || url.includes('fonts.gstatic.com')) {
+                return match; // 这些字体CDN直接访问更稳定
             }
 
             const proxyUrl = createProxyUrl(url);
