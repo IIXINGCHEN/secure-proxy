@@ -223,12 +223,12 @@ function detectContentType(url, responseHeaders, content = null) {
         }
     }
 
-    // 验证响应头的正确性
+    // 验证响应头的正确性 - 特别处理WASM文件
     if (headerContentType && expectedMimeType) {
         const headerType = headerContentType.toLowerCase().split(';')[0].trim();
         const expectedType = expectedMimeType.toLowerCase().split(';')[0].trim();
 
-        // 如果响应头类型明显错误（如CSS返回JSON），使用期望类型
+        // 如果响应头类型明显错误，使用期望类型
         if (headerType === 'application/json' && expectedType !== 'application/json') {
             return expectedMimeType;
         }
@@ -238,6 +238,11 @@ function detectContentType(url, responseHeaders, content = null) {
         }
 
         if (headerType === 'text/html' && (expectedType === 'text/css' || expectedType === 'application/javascript')) {
+            return expectedMimeType;
+        }
+
+        // 特别处理WASM文件 - 如果期望是WASM但返回JSON，强制使用WASM类型
+        if (expectedType === 'application/wasm' && headerType === 'application/json') {
             return expectedMimeType;
         }
     }
@@ -306,11 +311,13 @@ function processHtmlContent(html, baseUrl) {
                 resolvedUrl = new URL(trimmedUrl, origin + basePath).href;
             }
 
-            // 防止递归代理
+            // 防止递归代理 - 严格检查
             const resolvedUrlObj = new URL(resolvedUrl);
             if (resolvedUrlObj.hostname.includes('vercel.app') ||
                 resolvedUrlObj.hostname.includes('localhost') ||
-                resolvedUrlObj.hostname.includes('127.0.0.1')) {
+                resolvedUrlObj.hostname.includes('127.0.0.1') ||
+                resolvedUrlObj.href.includes('/api/proxy') ||
+                resolvedUrlObj.href.includes('secure-proxy-seven.vercel.app')) {
                 return targetUrl;
             }
 
@@ -372,7 +379,9 @@ function processHtmlContent(html, baseUrl) {
 
                 const resolvedUrlObj = new URL(resolvedUrl);
                 if (resolvedUrlObj.hostname.includes('vercel.app') ||
-                    resolvedUrlObj.hostname.includes('localhost')) {
+                    resolvedUrlObj.hostname.includes('localhost') ||
+                    resolvedUrl.includes('/api/proxy') ||
+                    resolvedUrl.includes('secure-proxy-seven.vercel.app')) {
                     return url;
                 }
 
@@ -544,10 +553,12 @@ function processHtmlContent(html, baseUrl) {
                 return match;
             }
 
-            // 跳过递归引用
+            // 跳过递归引用 - 严格检查
             if (trimmedUrl.includes('vercel.app') ||
                 trimmedUrl.includes('localhost') ||
-                trimmedUrl.includes('127.0.0.1')) {
+                trimmedUrl.includes('127.0.0.1') ||
+                trimmedUrl.includes('/api/proxy') ||
+                trimmedUrl.includes('secure-proxy-seven.vercel.app')) {
                 return match;
             }
 
