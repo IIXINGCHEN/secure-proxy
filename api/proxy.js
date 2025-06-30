@@ -368,6 +368,20 @@ function processHtmlContent(html, baseUrl, proxyHost = '') {
                 return url;
             }
 
+            // 跳过CDN资源，直接访问
+            const cdnDomains = [
+                'npm.elemecdn.com',
+                'cdnjs.cloudflare.com',
+                'unpkg.com',
+                'jsdelivr.net',
+                'fonts.googleapis.com',
+                'fonts.gstatic.com'
+            ];
+
+            if (cdnDomains.some(cdn => trimmedUrl.includes(cdn))) {
+                return url;
+            }
+
             try {
                 let resolvedUrl;
                 if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) {
@@ -528,12 +542,12 @@ function processHtmlContent(html, baseUrl, proxyHost = '') {
         { regex: /background-image\s*:\s*url\s*\(\s*["']?([^"')]+)["']?\s*\)/gi, attr: 'css-bg' },
         { regex: /background\s*:\s*url\s*\(\s*["']?([^"')]+)["']?\s*\)/gi, attr: 'css-bg-short' },
 
-        // JavaScript字符串中的URL（更精确的匹配）
-        { regex: /"((?:https?:\/\/|\/\/|\/)[^"]*\.(css|js|mjs|ts|json|wasm|png|jpg|jpeg|gif|svg|webp|ico|woff|woff2|ttf|eot|otf|mp3|mp4|webm|ogg|avi|mov|pdf|zip|rar|7z|tar|gz|webmanifest|xml|txt))"/gi, attr: 'js-url' },
-        { regex: /'((?:https?:\/\/|\/\/|\/)[^']*\.(css|js|mjs|ts|json|wasm|png|jpg|jpeg|gif|svg|webp|ico|woff|woff2|ttf|eot|otf|mp3|mp4|webm|ogg|avi|mov|pdf|zip|rar|7z|tar|gz|webmanifest|xml|txt))'/gi, attr: 'js-url-single' },
+        // JavaScript字符串中的URL（只匹配绝对URL，避免相对路径）
+        { regex: /"(https?:\/\/[^"]*\.(css|js|mjs|ts|json|wasm|png|jpg|jpeg|gif|svg|webp|ico|woff|woff2|ttf|eot|otf|mp3|mp4|webm|ogg|avi|mov|pdf|zip|rar|7z|tar|gz|webmanifest|xml|txt))"/gi, attr: 'js-url' },
+        { regex: /'(https?:\/\/[^']*\.(css|js|mjs|ts|json|wasm|png|jpg|jpeg|gif|svg|webp|ico|woff|woff2|ttf|eot|otf|mp3|mp4|webm|ogg|avi|mov|pdf|zip|rar|7z|tar|gz|webmanifest|xml|txt))'/gi, attr: 'js-url-single' },
 
-        // 模板字符串中的URL
-        { regex: /\`([^`]*\.(css|js|mjs|ts|json|wasm|png|jpg|jpeg|gif|svg|webp|ico|woff|woff2|ttf|eot|otf|mp3|mp4|webm|ogg|avi|mov|pdf|zip|rar|7z|tar|gz|webmanifest|xml|txt))\`/gi, attr: 'template-url' }
+        // 模板字符串中的URL（只匹配绝对URL）
+        { regex: /\`(https?:\/\/[^`]*\.(css|js|mjs|ts|json|wasm|png|jpg|jpeg|gif|svg|webp|ico|woff|woff2|ttf|eot|otf|mp3|mp4|webm|ogg|avi|mov|pdf|zip|rar|7z|tar|gz|webmanifest|xml|txt))\`/gi, attr: 'template-url' }
     ];
 
     // 处理每个URL模式
@@ -565,14 +579,17 @@ function processHtmlContent(html, baseUrl, proxyHost = '') {
                 return match;
             }
 
-            // 跳过可直接访问的CDN
+            // 跳过可直接访问的CDN - 扩展列表
             const directAccessCDNs = [
                 'cdnjs.cloudflare.com',
                 'unpkg.com',
                 'jsdelivr.net',
                 'fonts.googleapis.com',
                 'fonts.gstatic.com',
-                'ajax.googleapis.com'
+                'ajax.googleapis.com',
+                'npm.elemecdn.com',  // 添加这个CDN
+                'cdn.jsdelivr.net',
+                'fastly.jsdelivr.net'
             ];
 
             if (directAccessCDNs.some(cdn => trimmedUrl.includes(cdn))) {
