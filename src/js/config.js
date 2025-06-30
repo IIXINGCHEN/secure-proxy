@@ -73,27 +73,78 @@ const UI_CONFIG = {
     
     // 错误消息配置
     ERROR_MESSAGES: {
-        EMPTY_INPUT: '请输入要代理的URL地址',
-        INVALID_FORMAT: 'URL格式不正确，请输入完整的http://或https://地址',
-        DOMAIN_NOT_ALLOWED: '该域名不在允许的代理列表中',
-        PRIVATE_NETWORK: '不允许访问内网地址',
-        INVALID_PORT: '端口号不在有效范围内',
-        PARSE_ERROR: 'URL解析失败，请检查格式',
-        POPUP_BLOCKED: '无法打开新窗口，请检查浏览器的弹窗设置',
-        GENERAL_ERROR: '处理请求时发生错误，请重试',
-        NETWORK_ERROR: '网络连接失败，请检查网络状态',
-        TIMEOUT_ERROR: '请求超时，请重试',
-        CONFIG_LOAD_ERROR: '配置文件加载失败，请刷新页面',
-        VALIDATION_ERROR: '输入验证失败',
-        SECURITY_ERROR: '安全检查失败，请求被拒绝',
-        RATE_LIMIT_ERROR: '请求过于频繁，请稍后再试',
-        SERVICE_UNAVAILABLE: '服务暂时不可用，请稍后重试'
+        EMPTY_INPUT: {
+            title: '🔗 请输入URL地址',
+            description: '请在输入框中输入您要代理访问的完整URL地址'
+        },
+        INVALID_FORMAT: {
+            title: '❌ URL格式错误',
+            description: '请输入完整的URL地址，必须包含 http:// 或 https:// 前缀'
+        },
+        DOMAIN_NOT_ALLOWED: {
+            title: '🚫 域名未授权',
+            description: '该域名不在安全白名单中，请联系管理员添加或使用已授权的域名'
+        },
+        PRIVATE_NETWORK: {
+            title: '🔒 安全限制',
+            description: '出于安全考虑，不允许访问内网地址和私有网络'
+        },
+        INVALID_PORT: {
+            title: '⚠️ 端口限制',
+            description: '端口号超出允许范围，请使用标准的HTTP(80)或HTTPS(443)端口'
+        },
+        PARSE_ERROR: {
+            title: '🔧 URL解析失败',
+            description: 'URL格式有误，请检查地址是否正确并重新输入'
+        },
+        POPUP_BLOCKED: {
+            title: '🚪 弹窗被阻止',
+            description: '浏览器阻止了新窗口打开，请允许弹窗或手动复制链接在新标签页中打开'
+        },
+        GENERAL_ERROR: {
+            title: '⚡ 处理失败',
+            description: '请求处理时发生错误，请稍后重试或联系技术支持'
+        },
+        NETWORK_ERROR: {
+            title: '🌐 网络连接失败',
+            description: '无法连接到目标服务器，请检查网络连接或稍后重试'
+        },
+        TIMEOUT_ERROR: {
+            title: '⏱️ 请求超时',
+            description: '服务器响应超时，请检查网络状况或稍后重试'
+        },
+        CONFIG_LOAD_ERROR: {
+            title: '⚙️ 配置加载失败',
+            description: '系统配置加载失败，请刷新页面重试'
+        },
+        VALIDATION_ERROR: {
+            title: '✅ 验证失败',
+            description: '输入内容未通过安全验证，请检查并重新输入'
+        },
+        SECURITY_ERROR: {
+            title: '🛡️ 安全检查失败',
+            description: '请求未通过安全检查，已被系统拒绝'
+        },
+        RATE_LIMIT_ERROR: {
+            title: '🚦 请求过于频繁',
+            description: '您的请求过于频繁，请稍等片刻后再试'
+        },
+        SERVICE_UNAVAILABLE: {
+            title: '🔧 服务暂时不可用',
+            description: '代理服务正在维护中，请稍后重试'
+        }
     },
-    
+
     // 成功消息
     SUCCESS_MESSAGES: {
-        PROXY_CREATED: '代理请求已发送',
-        VALIDATION_PASSED: 'URL验证通过'
+        PROXY_CREATED: {
+            title: '🎉 代理成功创建',
+            description: '代理页面已在新窗口中打开，您现在可以安全地访问目标网站'
+        },
+        VALIDATION_PASSED: {
+            title: '✅ 验证通过',
+            description: 'URL地址验证成功，正在为您创建安全代理连接'
+        }
     },
     
     // UI样式配置

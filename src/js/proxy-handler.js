@@ -108,7 +108,7 @@ class ProxyHandler {
                     }
                     
                     // 显示成功消息
-                    this.showSuccess('代理页面已在新窗口中打开');
+                    this.showSuccess(this.uiConfig.SUCCESS_MESSAGES.PROXY_CREATED);
                     
                     if (this.appConfig.CONSOLE_LOGGING) {
                         console.log(this.uiConfig.SUCCESS_MESSAGES.PROXY_CREATED);

@@ -449,39 +449,85 @@ h1.splash strong {
 
 .message-container {
     border-radius: 12px;
-    padding: 1rem 1.5rem;
-    margin: 1rem 0;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
     font-size: 1rem;
-    line-height: 1.5;
+    line-height: 1.6;
     display: none;
     position: relative;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
     transition: all 0.3s ease;
-    border: 1px solid transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    animation: messageSlideIn 0.3s ease-out;
+}
+
+@keyframes messageSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.message-container::before {
+    content: '';
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 2rem;
+    border-radius: 2px;
+    background: currentColor;
+    opacity: 0.8;
+}
+
+.message-content {
+    margin-left: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.message-title {
+    font-weight: 600;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.message-description {
+    opacity: 0.9;
+    font-size: 0.95rem;
 }
 
 .error-message {
-    color: #dc3545;
-    background: linear-gradient(135deg, #f8d7da, #f5c6cb);
-    border-color: #f5c6cb;
+    color: #ffffff;
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    border-color: rgba(231, 76, 60, 0.3);
 }
 
 .success-message {
-    color: #155724;
-    background: linear-gradient(135deg, #d4edda, #c3e6cb);
-    border-color: #c3e6cb;
+    color: #ffffff;
+    background: linear-gradient(135deg, #27ae60, #229954);
+    border-color: rgba(39, 174, 96, 0.3);
 }
 
 .warning-message {
-    color: #856404;
-    background: linear-gradient(135deg, #fff3cd, #ffeaa7);
-    border-color: #ffeaa7;
+    color: #ffffff;
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+    border-color: rgba(243, 156, 18, 0.3);
 }
 
 .info-message {
-    color: #0c5460;
-    background: linear-gradient(135deg, #d1ecf1, #bee5eb);
-    border-color: #bee5eb;
+    color: #ffffff;
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    border-color: rgba(52, 152, 219, 0.3);
 }
 
 .message-close {
@@ -489,14 +535,24 @@ h1.splash strong {
     right: 1rem;
     top: 1rem;
     cursor: pointer;
-    font-size: 1.2rem;
+    font-size: 1.5rem;
     line-height: 1;
-    opacity: 0.7;
-    transition: opacity 0.3s ease;
+    opacity: 0.8;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: inherit;
 }
 
 .message-close:hover {
     opacity: 1;
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
 }
 
 /* ==========================================================================

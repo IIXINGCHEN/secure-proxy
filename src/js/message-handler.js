@@ -60,22 +60,6 @@ Object.assign(ProxyHandler.prototype, {
             messageDiv.id = messageId;
             messageDiv.className = `message-container ${type}-message`;
 
-            const colors = this.getMessageColors(type);
-            messageDiv.style.cssText = `
-                color: ${colors.text};
-                background-color: ${colors.background};
-                border: 1px solid ${colors.border};
-                border-radius: 6px;
-                padding: 12px 16px;
-                margin: 10px 0;
-                font-size: 14px;
-                line-height: 1.4;
-                display: none;
-                position: relative;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                transition: all ${this.uiConfig.STYLES.ANIMATION_DURATION}ms ease;
-            `;
-
             // 添加关闭按钮
             if (options.closable !== false) {
                 const closeBtn = document.createElement('span');
@@ -89,18 +73,7 @@ Object.assign(ProxyHandler.prototype, {
         }
 
         // 设置消息内容
-        const content = options.closable !== false ?
-            `<span style="margin-right: 20px;">${message}</span>` : message;
-        messageDiv.innerHTML = content;
-
-        // 重新添加关闭按钮（如果需要）
-        if (options.closable !== false) {
-            const closeBtn = document.createElement('span');
-            closeBtn.innerHTML = '×';
-            closeBtn.className = 'message-close';
-            closeBtn.onclick = () => this.hideMessage(type);
-            messageDiv.appendChild(closeBtn);
-        }
+        this.setMessageContent(messageDiv, message, type, options);
 
         // 显示消息
         messageDiv.style.display = 'block';
@@ -123,43 +96,47 @@ Object.assign(ProxyHandler.prototype, {
     },
 
     /**
-     * 获取消息颜色配置
+     * 设置消息内容
      */
-    getMessageColors(type) {
-        const styles = this.uiConfig.STYLES;
-        switch (type) {
-            case 'error':
-                return {
-                    text: styles.ERROR_COLOR,
-                    background: '#f8d7da',
-                    border: '#f5c6cb'
-                };
-            case 'success':
-                return {
-                    text: styles.SUCCESS_COLOR,
-                    background: '#d4edda',
-                    border: '#c3e6cb'
-                };
-            case 'warning':
-                return {
-                    text: '#856404',
-                    background: '#fff3cd',
-                    border: '#ffeaa7'
-                };
-            case 'info':
-                return {
-                    text: styles.INFO_COLOR,
-                    background: '#d1ecf1',
-                    border: '#bee5eb'
-                };
-            default:
-                return {
-                    text: '#495057',
-                    background: '#f8f9fa',
-                    border: '#dee2e6'
-                };
+    setMessageContent(messageDiv, message, type, options) {
+        // 清空现有内容（保留关闭按钮）
+        const closeBtn = messageDiv.querySelector('.message-close');
+        messageDiv.innerHTML = '';
+
+        // 创建消息内容容器
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'message-content';
+
+        // 处理消息格式
+        if (typeof message === 'object' && message.title) {
+            // 新格式：包含标题和描述
+            const titleDiv = document.createElement('div');
+            titleDiv.className = 'message-title';
+            titleDiv.innerHTML = message.title;
+
+            const descDiv = document.createElement('div');
+            descDiv.className = 'message-description';
+            descDiv.innerHTML = message.description;
+
+            contentDiv.appendChild(titleDiv);
+            contentDiv.appendChild(descDiv);
+        } else {
+            // 旧格式：纯文本
+            const titleDiv = document.createElement('div');
+            titleDiv.className = 'message-title';
+            titleDiv.innerHTML = message;
+            contentDiv.appendChild(titleDiv);
+        }
+
+        messageDiv.appendChild(contentDiv);
+
+        // 重新添加关闭按钮
+        if (closeBtn) {
+            messageDiv.appendChild(closeBtn);
         }
     },
+
+
 
     /**
      * 隐藏指定类型的消息
