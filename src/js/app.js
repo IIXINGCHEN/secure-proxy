@@ -412,15 +412,25 @@ class SecurityChecker {
 
     /**
      * 检查域名是否在白名单中
+     * 支持通配符域名匹配 (*.example.com)
      */
     isAllowedDomain(url) {
         try {
             const urlObj = new URL(url);
             const hostname = urlObj.hostname.toLowerCase();
 
-            return this.config.ALLOWED_DOMAINS.some(domain =>
-                hostname === domain || hostname.endsWith('.' + domain)
-            );
+            return this.config.ALLOWED_DOMAINS.some(domain => {
+                // 处理通配符域名 (*.example.com)
+                if (domain.startsWith('*.')) {
+                    const baseDomain = domain.substring(2).toLowerCase(); // 移除 '*.'
+                    // 匹配基础域名或其子域名
+                    return hostname === baseDomain || hostname.endsWith('.' + baseDomain);
+                }
+
+                // 处理普通域名
+                domain = domain.toLowerCase();
+                return hostname === domain || hostname.endsWith('.' + domain);
+            });
         } catch (error) {
             console.error('URL解析错误:', error);
             return false;
