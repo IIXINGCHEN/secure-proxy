@@ -208,7 +208,7 @@ class ProxyHandler {
             console.error('获取访问令牌失败:', error);
             return null;
         }
-    },
+    }
 
     /**
      * 缓存访问令牌
@@ -226,7 +226,7 @@ class ProxyHandler {
         } catch (error) {
             console.warn('无法缓存访问令牌:', error);
         }
-    },
+    }
 
     /**
      * 获取缓存的令牌
@@ -240,7 +240,7 @@ class ProxyHandler {
             console.warn('无法读取缓存的令牌:', error);
             return null;
         }
-    },
+    }
 
     /**
      * 验证令牌是否有效
@@ -263,7 +263,7 @@ class ProxyHandler {
         }
 
         return true;
-    },
+    }
 
     /**
      * 标记令牌已使用
@@ -278,9 +278,7 @@ class ProxyHandler {
         } catch (error) {
             console.warn('无法更新令牌使用计数:', error);
         }
-    },
-
-
+    }
 
     /**
      * 记录访问日志和统计
