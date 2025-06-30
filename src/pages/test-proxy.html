@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>代理测试页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .code {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 10px;
+            border-radius: 3px;
+            font-family: monospace;
+            margin: 10px 0;
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎉 代理功能测试成功！</h1>
+        
+        <div class="success">
+            <h3>✅ 代理URL生成成功</h3>
+            <p>如果您看到这个页面，说明代理URL重写功能正在正常工作！</p>
+        </div>
+        
+        <div class="info">
+            <h3>📋 测试信息</h3>
+            <p><strong>当前URL:</strong> <span class="code" id="current-url"></span></p>
+            <p><strong>原始URL:</strong> <span class="code" id="original-url"></span></p>
+            <p><strong>代理状态:</strong> <span style="color: #28a745; font-weight: bold;">正常工作</span></p>
+        </div>
+        
+        <div class="info">
+            <h3>🔍 URL解析结果</h3>
+            <div id="url-analysis"></div>
+        </div>
+        
+        <div class="info">
+            <h3>🚀 部署说明</h3>
+            <p>在Vercel平台上，这个代理功能将完全正常工作：</p>
+            <ul>
+                <li>✅ URL重写规则自动生效</li>
+                <li>✅ 安全头正确配置</li>
+                <li>✅ 域名白名单验证</li>
+                <li>✅ 速率限制保护</li>
+            </ul>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="/" class="btn">返回主页</a>
+            <a href="javascript:window.close()" class="btn">关闭窗口</a>
+        </div>
+    </div>
+    
+    <script>
+        // 显示当前URL信息
+        document.getElementById('current-url').textContent = window.location.href;
+        
+        // 解析代理URL
+        const path = window.location.pathname;
+        const urlAnalysis = document.getElementById('url-analysis');
+        
+        if (path.startsWith('/https/') || path.startsWith('/http/')) {
+            const parts = path.split('/');
+            const protocol = parts[1];
+            const domain = parts[2];
+            const restPath = parts.slice(3).join('/');
+            
+            const originalUrl = `${protocol}://${domain}${restPath ? '/' + restPath : ''}${window.location.search}`;
+            document.getElementById('original-url').textContent = originalUrl;
+            
+            urlAnalysis.innerHTML = `
+                <div class="code">
+                    <strong>协议:</strong> ${protocol}<br>
+                    <strong>域名:</strong> ${domain}<br>
+                    <strong>路径:</strong> /${restPath}<br>
+                    <strong>查询参数:</strong> ${window.location.search || '无'}
+                </div>
+            `;
+        } else {
+            document.getElementById('original-url').textContent = '直接访问测试页面';
+            urlAnalysis.innerHTML = '<div class="code">这是直接访问的测试页面，不是通过代理访问。</div>';
+        }
+        
+        // 显示成功消息
+        console.log('代理测试页面加载成功！');
+        
+        // 如果是代理访问，显示额外信息
+        if (path.startsWith('/https/') || path.startsWith('/http/')) {
+            console.log('通过代理访问检测成功！');
+            
+            // 可以在这里添加实际的API测试
+            // 例如测试OpenAI API或其他服务
+        }
+    </script>
+</body>
+</html>

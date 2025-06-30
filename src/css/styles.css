@@ -1,0 +1,511 @@
+/**
+ * Vercel反向代理 - 样式文件
+ * 版本: 2.0.0 (安全加固版)
+ * 
+ * 包含所有页面样式：
+ * - 基础重置样式
+ * - 布局和网格系统
+ * - 表单和输入样式
+ * - 安全提示样式
+ * - 消息和通知样式
+ * - 响应式设计
+ */
+
+/* ==========================================================================
+   基础重置样式
+   ========================================================================== */
+
+html, body, body div, span, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, abbr, address, cite, code, del, dfn, em, img, ins, kbd, q, samp, small, strong, sub, sup, var, b, i, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td, article, aside, figure, footer, header, hgroup, menu, nav, section, time, mark, audio, video, details, summary {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    font-size: 100%;
+    vertical-align: baseline;
+    background: transparent;
+}
+
+/* ==========================================================================
+   基础布局
+   ========================================================================== */
+
+html, body, .wrapper {
+    height: 100%;
+    width: 100%;
+    background-image: linear-gradient(to top, #c1dfc4 0%, #deecdd 100%);
+}
+
+*, html, body {
+    font-family: "Lato", serif;
+    font-size: 15px;
+    font-weight: 300;
+    line-height: 22px;
+}
+
+input {
+    font-family: inherit;
+}
+
+*:focus {
+    outline: none;
+}
+
+*, *:before, *:after {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+/* ==========================================================================
+   网格系统
+   ========================================================================== */
+
+.row {
+    position: relative;
+    width: 100%;
+}
+
+.row:before, .row:after {
+    content: "";
+    display: table;
+    line-height: 0;
+}
+
+.row [class*="span"].noFloat {
+    float: none;
+    margin: 2% auto;
+    overflow: hidden;
+}
+
+.row [class*="span"] {
+    float: left;
+    position: relative;
+}
+
+.margin .span10 {
+    width: 81.33333%;
+}
+
+/* ==========================================================================
+   主要组件样式
+   ========================================================================== */
+
+.UrlCheck {
+    opacity: 1;
+    height: auto;
+    margin-top: 0px !important;
+}
+
+.UrlCheck .span10 {
+    margin-top: 70px !important;
+    background: rgba(255, 255, 255, 0.5);
+    padding: 7px;
+    overflow: hidden;
+    max-width: 800px;
+}
+
+/* ==========================================================================
+   标题样式
+   ========================================================================== */
+
+h1.splash {
+    font-size: 48px;
+    margin: 0;
+    margin-top: 130px;
+    margin-bottom: 0px;
+    line-height: 52px;
+    color: #FFF;
+    text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+strong {
+    font-weight: bold;
+}
+
+.row .textCenter {
+    text-align: center;
+    background: none;
+}
+
+/* ==========================================================================
+   表单和输入样式
+   ========================================================================== */
+
+textarea, input[type="text"], input[type="password"] {
+    width: 100%;
+    background: #FFF;
+    border: 0px solid #CCC;
+    padding: 8px 5px;
+    color: #333;
+}
+
+.UrlCheck input[type="text"] {
+    -webkit-border-radius: 0px;
+    -moz-border-radius: 0px;
+    border-radius: 0px;
+    -webkit-border-top-left-radius: 4px;
+    -moz-border-top-left-radius: 4px;
+    border-top-left-radius: 4px;
+    -webkit-border-bottom-left-radius: 4px;
+    -moz-border-bottom-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+    font-size: 20px;
+    height: 58px;
+    line-height: 58px;
+    width: 70%;
+    float: left;
+    padding-left: 10px;
+    background: #FFF;
+}
+
+.UrlCheck #submitBtn {
+    position: absolute;
+    -webkit-border-radius: 0px;
+    -moz-border-radius: 0px;
+    border-radius: 0px;
+    -webkit-border-top-right-radius: 4px;
+    -moz-border-top-right-radius: 4px;
+    border-top-right-radius: 4px;
+    -webkit-border-bottom-right-radius: 4px;
+    -moz-border-bottom-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+    background: #9dca68;
+    font-size: 18px;
+    height: 58px;
+    line-height: 58px;
+    border: 0;
+    font-weight: 400;
+    width: 30%;
+    text-align: center;
+    margin-top: 0px;
+    color: #FFF;
+    cursor: pointer;
+    right: 7px;
+    top: 7px;
+    transition: all 0.3s ease;
+}
+
+.UrlCheck #submitBtn:hover {
+    background: #8bb85c;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.UrlCheck #submitBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* ==========================================================================
+   安全提示样式
+   ========================================================================== */
+
+#security-notice {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin: 15px 0;
+    font-size: 13px;
+    line-height: 1.4;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+#security-notice .security-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+#security-notice .security-icon {
+    font-size: 16px;
+    margin-right: 8px;
+}
+
+#security-level {
+    background: #28a745;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+    margin-left: auto;
+    font-weight: bold;
+}
+
+#security-details {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    font-size: 11px;
+    opacity: 0.8;
+    display: none;
+}
+
+#security-features {
+    margin-top: 4px;
+    padding-left: 12px;
+}
+
+#toggle-security-details {
+    color: #ffd700;
+    font-size: 11px;
+    text-decoration: none;
+    opacity: 0.8;
+}
+
+#toggle-security-details:hover {
+    opacity: 1;
+    text-decoration: underline;
+}
+
+/* ==========================================================================
+   消息和通知样式
+   ========================================================================== */
+
+.message-container {
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 10px 0;
+    font-size: 14px;
+    line-height: 1.4;
+    display: none;
+    position: relative;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.error-message {
+    color: #dc3545;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+}
+
+.success-message {
+    color: #28a745;
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+}
+
+.warning-message {
+    color: #856404;
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+}
+
+.info-message {
+    color: #0c5460;
+    background-color: #d1ecf1;
+    border: 1px solid #bee5eb;
+}
+
+.message-close {
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    opacity: 0.7;
+}
+
+.message-close:hover {
+    opacity: 1;
+}
+
+/* ==========================================================================
+   加载状态样式
+   ========================================================================== */
+
+#loading-indicator {
+    display: inline-flex;
+    align-items: center;
+    color: #9dca68;
+    font-size: 14px;
+    margin: 10px 0;
+}
+
+.loading-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #9dca68;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 8px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ==========================================================================
+   域名列表样式
+   ========================================================================== */
+
+#supported-domains {
+    display: none;
+}
+
+#supported-domains .domain-container {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    padding: 12px;
+    margin: 10px 0;
+    font-size: 13px;
+}
+
+#supported-domains .domain-title {
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #495057;
+}
+
+#domain-list {
+    max-height: 120px;
+    overflow-y: auto;
+    font-family: monospace;
+    font-size: 12px;
+    color: #6c757d;
+}
+
+#domain-list div {
+    padding: 2px 0;
+}
+
+#toggle-domains {
+    color: #007bff;
+    text-decoration: none;
+    font-size: 11px;
+}
+
+#toggle-domains:hover {
+    text-decoration: underline;
+}
+
+/* ==========================================================================
+   输入提示样式
+   ========================================================================== */
+
+#input-hint {
+    font-size: 12px;
+    color: #6c757d;
+    margin-top: 5px;
+    padding: 5px 10px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    border-left: 3px solid #ffc107;
+    display: none;
+}
+
+/* ==========================================================================
+   风险警告样式
+   ========================================================================== */
+
+#risk-warning {
+    display: none;
+}
+
+.risk-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin: 5px 0;
+    font-size: 12px;
+}
+
+.risk-item .risk-icon {
+    margin-right: 8px;
+}
+
+/* ==========================================================================
+   链接样式
+   ========================================================================== */
+
+a, a:visited {
+    color: #22225e;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* ==========================================================================
+   页脚样式
+   ========================================================================== */
+
+.footer {
+    text-align: center;
+    margin-top: -70px;
+    padding: 25px 0 0 0;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.5);
+    height: 70px;
+}
+
+.footer a {
+    margin-right: 20px;
+    color: #fff;
+}
+
+/* ==========================================================================
+   响应式设计
+   ========================================================================== */
+
+@media (max-width: 768px) {
+    h1.splash {
+        font-size: 36px;
+        margin-top: 80px;
+    }
+    
+    .UrlCheck .span10 {
+        margin-top: 40px !important;
+        padding: 15px;
+    }
+    
+    .UrlCheck input[type="text"] {
+        width: 100%;
+        margin-bottom: 10px;
+        border-radius: 4px;
+    }
+    
+    .UrlCheck #submitBtn {
+        position: relative;
+        width: 100%;
+        right: auto;
+        top: auto;
+        border-radius: 4px;
+    }
+    
+    #security-notice {
+        font-size: 12px;
+        padding: 10px 12px;
+    }
+    
+    .message-container {
+        font-size: 13px;
+        padding: 10px 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    h1.splash {
+        font-size: 28px;
+        line-height: 32px;
+    }
+    
+    .UrlCheck input[type="text"] {
+        font-size: 16px;
+        height: 48px;
+        line-height: 48px;
+    }
+    
+    .UrlCheck #submitBtn {
+        font-size: 16px;
+        height: 48px;
+        line-height: 48px;
+    }
+}
