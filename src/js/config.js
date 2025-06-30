@@ -198,24 +198,11 @@ const LEGAL_CONFIG = {
 
 // 开发者配置
 const DEVELOPER_CONFIG = {
-    // API端点配置 - 支持双平台自动检测
+    // API端点配置
     API_ENDPOINTS: {
         HEALTH_CHECK: '/api/health',
         STATS: '/api/stats',
-        CONFIG: '/api/config',
-        // 代理端点 - 根据平台自动选择
-        PROXY: {
-            VERCEL: '/api/proxy',
-            NETLIFY: '/.netlify/functions/proxy'
-        }
-    },
-
-    // 平台检测配置
-    PLATFORM_DETECTION: {
-        enableAutoDetection: true,
-        vercelIndicators: ['vercel.app', 'vercel.com'],
-        netlifyIndicators: ['netlify.app', 'netlify.com'],
-        fallbackPlatform: 'vercel'
+        CONFIG: '/api/config'
     },
 
     // 开发工具配置
@@ -277,10 +264,7 @@ if (typeof module !== 'undefined' && module.exports) {
         APP_CONFIG,
         LEGAL_CONFIG,
         DEVELOPER_CONFIG,
-        CONFIG_MANAGER,
-        detectPlatform,
-        getApiEndpoint,
-        validateConfig
+        CONFIG_MANAGER
     };
 } else {
     // 浏览器环境
@@ -290,10 +274,7 @@ if (typeof module !== 'undefined' && module.exports) {
         APP_CONFIG,
         LEGAL_CONFIG,
         DEVELOPER_CONFIG,
-        CONFIG_MANAGER,
-        detectPlatform,
-        getApiEndpoint,
-        validateConfig
+        CONFIG_MANAGER
     };
 }
 
@@ -328,59 +309,12 @@ function validateConfig() {
     return true;
 }
 
-/**
- * 检测当前运行平台
- */
-function detectPlatform() {
-    const hostname = window.location.hostname;
-    const config = DEVELOPER_CONFIG.PLATFORM_DETECTION;
-
-    // 检测Vercel
-    if (config.vercelIndicators.some(indicator => hostname.includes(indicator))) {
-        return 'vercel';
-    }
-
-    // 检测Netlify
-    if (config.netlifyIndicators.some(indicator => hostname.includes(indicator))) {
-        return 'netlify';
-    }
-
-    // 检测环境变量（如果可用）
-    if (typeof process !== 'undefined' && process.env) {
-        if (process.env.VERCEL) return 'vercel';
-        if (process.env.NETLIFY) return 'netlify';
-    }
-
-    // 返回默认平台
-    return config.fallbackPlatform;
-}
-
-/**
- * 获取当前平台的API端点
- */
-function getApiEndpoint(endpointType = 'PROXY') {
-    const platform = detectPlatform();
-    const endpoints = DEVELOPER_CONFIG.API_ENDPOINTS;
-
-    if (endpointType === 'PROXY') {
-        return endpoints.PROXY[platform.toUpperCase()] || endpoints.PROXY.VERCEL;
-    }
-
-    return endpoints[endpointType] || endpoints.PROXY.VERCEL;
-}
-
 // 自动验证配置
 if (typeof window !== 'undefined') {
     // 浏览器环境下自动验证
     document.addEventListener('DOMContentLoaded', function() {
         if (!validateConfig()) {
             console.error('配置文件存在错误，请检查config.js');
-        }
-
-        // 显示平台信息（调试模式）
-        if (APP_CONFIG.DEBUG_MODE) {
-            console.log(`检测到平台: ${detectPlatform()}`);
-            console.log(`API端点: ${getApiEndpoint('PROXY')}`);
         }
     });
 }

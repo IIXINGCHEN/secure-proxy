@@ -1,11 +1,9 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": "public",
   "rewrites": [
     { "source": "/test-proxy", "destination": "/src/pages/test-proxy.html" },
-    { "source": "/imgs/icons/(.*)", "destination": "/assets/icons/$1" },
-    { "source": "/api/sw.js", "destination": "/sw.js" },
-    { "source": "/manifest.json", "destination": "/manifest.json" }
+    { "source": "/imgs/icons/(.*)", "destination": "/public/icons/$1" },
+    { "source": "/api/sw.js", "destination": "/public/sw.js" },
+    { "source": "/manifest.json", "destination": "/public/manifest.json" }
   ],
   "headers": [
     {

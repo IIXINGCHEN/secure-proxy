@@ -54,10 +54,9 @@ class ProxyHandler {
                 return;
             }
 
-            // 构建代理URL - 自动检测平台并使用对应的API端点
+            // 构建代理URL - 使用新的API端点
             const baseUrl = location.origin;
-            const apiEndpoint = window.ProxyConfig.getApiEndpoint('PROXY');
-            const proxyUrl = `${baseUrl}${apiEndpoint}?url=${encodeURIComponent(inputValue)}`;
+            const proxyUrl = `${baseUrl}/api/proxy?url=${encodeURIComponent(inputValue)}`;
 
             // 记录访问日志
             this.logAccess(inputValue, proxyUrl);
