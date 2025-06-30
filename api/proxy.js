@@ -263,9 +263,10 @@ function detectContentType(url, responseHeaders, content = null) {
  * 完整的HTML路径重写系统，支持所有类型的资源引用
  * @param {string} html - 原始HTML内容
  * @param {string} baseUrl - 基础URL
+ * @param {string} proxyHost - 当前代理服务器的主机名
  * @returns {string} 处理后的HTML内容
  */
-function processHtmlContent(html, baseUrl) {
+function processHtmlContent(html, baseUrl, proxyHost = '') {
     if (!html || typeof html !== 'string') {
         return html;
     }
@@ -311,13 +312,14 @@ function processHtmlContent(html, baseUrl) {
                 resolvedUrl = new URL(trimmedUrl, origin + basePath).href;
             }
 
-            // 防止递归代理 - 严格检查
+            // 防止递归代理 - 使用传入的代理主机名
             const resolvedUrlObj = new URL(resolvedUrl);
+
             if (resolvedUrlObj.hostname.includes('vercel.app') ||
                 resolvedUrlObj.hostname.includes('localhost') ||
                 resolvedUrlObj.hostname.includes('127.0.0.1') ||
                 resolvedUrlObj.href.includes('/api/proxy') ||
-                resolvedUrlObj.href.includes('secure-proxy-seven.vercel.app')) {
+                (proxyHost && resolvedUrlObj.hostname === proxyHost)) {
                 return targetUrl;
             }
 
@@ -348,7 +350,8 @@ function processHtmlContent(html, baseUrl) {
         const PROXY_CONFIG = {
             origin: '${origin}',
             basePath: '${basePath}',
-            proxyEndpoint: '/api/proxy?url='
+            proxyEndpoint: '/api/proxy?url=',
+            currentHost: location.hostname
         };
 
         function createProxyUrl(url) {
@@ -381,7 +384,7 @@ function processHtmlContent(html, baseUrl) {
                 if (resolvedUrlObj.hostname.includes('vercel.app') ||
                     resolvedUrlObj.hostname.includes('localhost') ||
                     resolvedUrl.includes('/api/proxy') ||
-                    resolvedUrl.includes('secure-proxy-seven.vercel.app')) {
+                    resolvedUrlObj.hostname === PROXY_CONFIG.currentHost) {
                     return url;
                 }
 
@@ -553,12 +556,12 @@ function processHtmlContent(html, baseUrl) {
                 return match;
             }
 
-            // 跳过递归引用 - 严格检查
+            // 跳过递归引用 - 使用传入的代理主机名
             if (trimmedUrl.includes('vercel.app') ||
                 trimmedUrl.includes('localhost') ||
                 trimmedUrl.includes('127.0.0.1') ||
                 trimmedUrl.includes('/api/proxy') ||
-                trimmedUrl.includes('secure-proxy-seven.vercel.app')) {
+                (proxyHost && trimmedUrl.includes(proxyHost))) {
                 return match;
             }
 
@@ -704,9 +707,6 @@ export default async function handler(request) {
             }, 400);
         }
 
-    try {
-        const targetUrlObj = new URL(targetUrl);
-
         // 域名白名单验证
         if (!isAllowedDomain(targetUrlObj.hostname)) {
             return createErrorResponse({
@@ -827,7 +827,9 @@ async function executeProxyRequest(originalRequest, targetUrl, targetUrlObj) {
         if (contentType.includes('text/html')) {
             try {
                 const htmlContent = new TextDecoder('utf-8').decode(responseBuffer);
-                const processedHtml = processHtmlContent(htmlContent, targetUrl);
+                // 从原始请求中获取当前代理主机名
+                const proxyHost = new URL(originalRequest.url).hostname;
+                const processedHtml = processHtmlContent(htmlContent, targetUrl, proxyHost);
                 processedContent = new TextEncoder().encode(processedHtml);
             } catch (htmlError) {
                 console.warn('HTML processing failed:', htmlError);
@@ -930,7 +932,6 @@ function setCorsHeaders(headers) {
     headers.set('Access-Control-Expose-Headers', 'Content-Length, Content-Range, Content-Type, Date, Server, Transfer-Encoding, ETag, Last-Modified');
     headers.set('Access-Control-Max-Age', '86400');
     headers.set('Vary', 'Origin, Access-Control-Request-Method, Access-Control-Request-Headers');
-}
 }
 
 // Vercel Edge Runtime配置
