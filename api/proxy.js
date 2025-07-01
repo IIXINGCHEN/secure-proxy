@@ -329,7 +329,7 @@ function generateAccessToken(clientId = 'default') {
     TOKEN_STORE.set(tokenId, token);
 
     // 清理过期令牌
-    cleanupExpiredTokens();
+    TOKEN_STORE.cleanupExpiredTokens();
 
     return tokenId;
 }
@@ -371,17 +371,7 @@ function validateAccessToken(tokenId) {
     return true;
 }
 
-/**
- * 清理过期令牌
- */
-function cleanupExpiredTokens() {
-    const now = Date.now();
-    for (const [tokenId, token] of TOKEN_STORE.entries()) {
-        if (now > token.expiresAt) {
-            TOKEN_STORE.delete(tokenId);
-        }
-    }
-}
+// 清理过期令牌功能已集成到 SecureTokenStore 类中
 
 /**
  * 高级内容类型检测器
