@@ -5,8 +5,15 @@
 
 // 安全配置
 const SECURITY_CONFIG = {
-    // 域名白名单配置 - 从后端API获取，避免重复配置
-    ALLOWED_DOMAINS: [], // 将在运行时从API获取
+    // 域名白名单配置 - 提供备用列表，运行时从API更新
+    ALLOWED_DOMAINS: [
+        // 备用域名列表，从DOMAIN_CATEGORIES提取
+        'api.openai.com', 'openai.com',
+        'github.com', 'api.github.com', 'raw.githubusercontent.com',
+        'www.google.com', 'translate.googleapis.com',
+        'player.imixc.top', '*.imixc.top', '*.ixingchen.top',
+        'httpbin.org', 'jsonplaceholder.typicode.com'
+    ], // 运行时从API获取最新列表
 
     // 域名分类（用于前端显示）
     DOMAIN_CATEGORIES: {
@@ -284,12 +291,5 @@ function validateConfig() {
     return true;
 }
 
-// 自动验证配置
-if (typeof window !== 'undefined') {
-    // 浏览器环境下自动验证
-    document.addEventListener('DOMContentLoaded', function() {
-        if (!validateConfig()) {
-            console.error('配置文件存在错误，请检查config.js');
-        }
-    });
-}
+// 配置验证将在域名列表加载完成后执行
+// 移除自动验证，避免时序问题

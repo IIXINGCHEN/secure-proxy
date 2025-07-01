@@ -78,6 +78,15 @@ async function loadDomainWhitelist(securityConfig) {
         securityConfig.ALLOWED_DOMAINS = backupDomains;
         console.log('使用备用域名列表:', backupDomains.length, '个域名');
     }
+
+    // 域名列表加载完成后执行配置验证
+    if (typeof window.ProxyConfig !== 'undefined' && typeof validateConfig === 'function') {
+        if (!validateConfig()) {
+            console.error('配置验证失败，请检查配置文件');
+        } else {
+            console.log('配置验证通过');
+        }
+    }
 }
 
 /**
