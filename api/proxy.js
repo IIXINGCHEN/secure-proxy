@@ -60,7 +60,10 @@ const ANTI_HOTLINK_CONFIG = {
         'secure-proxy-seven.vercel.app',
         'localhost',
         '127.0.0.1',
-        'xy.ixingchen.top'
+        'xy.ixingchen.top',
+        'www.xy.ixingchen.top',
+        'ixingchen.top',
+        'www.ixingchen.top'
     ],
     REQUIRE_TOKEN: true,   // 启用令牌验证
     TOKEN_EXPIRY: 300000,  // 5分钟有效期，增强安全性
@@ -239,14 +242,19 @@ function isAllowedDomain(hostname) {
  */
 function validateReferer(request) {
     if (!ANTI_HOTLINK_CONFIG.ENABLED) {
+        console.log('防盗链验证已禁用，允许访问');
         return true;
     }
 
     const referer = request.headers.get('referer');
     const origin = request.headers.get('origin');
 
+    console.log('防盗链验证 - Referer:', referer, 'Origin:', origin);
+    console.log('允许的Referer列表:', ANTI_HOTLINK_CONFIG.ALLOWED_REFERERS);
+
     // 如果没有referer和origin，拒绝访问（防止直接访问）
     if (!referer && !origin) {
+        console.log('防盗链验证失败：缺少referer和origin');
         return false;
     }
 
@@ -255,12 +263,21 @@ function validateReferer(request) {
         try {
             const refererUrl = new URL(referer);
             const refererHost = refererUrl.hostname;
+            console.log('检查Referer主机名:', refererHost);
 
-            return ANTI_HOTLINK_CONFIG.ALLOWED_REFERERS.some(allowedReferer => {
-                return refererHost === allowedReferer ||
-                       refererHost.endsWith('.' + allowedReferer);
+            const isAllowed = ANTI_HOTLINK_CONFIG.ALLOWED_REFERERS.some(allowedReferer => {
+                const match = refererHost === allowedReferer ||
+                             refererHost.endsWith('.' + allowedReferer);
+                console.log(`匹配检查: ${refererHost} vs ${allowedReferer} = ${match}`);
+                return match;
             });
+
+            if (isAllowed) {
+                console.log('Referer验证通过');
+                return true;
+            }
         } catch (e) {
+            console.log('Referer URL解析失败:', e.message);
             return false;
         }
     }
@@ -270,16 +287,26 @@ function validateReferer(request) {
         try {
             const originUrl = new URL(origin);
             const originHost = originUrl.hostname;
+            console.log('检查Origin主机名:', originHost);
 
-            return ANTI_HOTLINK_CONFIG.ALLOWED_REFERERS.some(allowedReferer => {
-                return originHost === allowedReferer ||
-                       originHost.endsWith('.' + allowedReferer);
+            const isAllowed = ANTI_HOTLINK_CONFIG.ALLOWED_REFERERS.some(allowedReferer => {
+                const match = originHost === allowedReferer ||
+                             originHost.endsWith('.' + allowedReferer);
+                console.log(`匹配检查: ${originHost} vs ${allowedReferer} = ${match}`);
+                return match;
             });
+
+            if (isAllowed) {
+                console.log('Origin验证通过');
+                return true;
+            }
         } catch (e) {
+            console.log('Origin URL解析失败:', e.message);
             return false;
         }
     }
 
+    console.log('防盗链验证失败：没有匹配的referer或origin');
     return false;
 }
 
