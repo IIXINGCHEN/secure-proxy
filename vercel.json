@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/", "destination": "/index.html" },
     { "source": "/api/token", "destination": "/api/proxy?action=token" },
     { "source": "/api/domains", "destination": "/api/proxy?action=domains" },
     { "source": "/imgs/icons/(.*)", "destination": "/public/icons/$1" },
