@@ -1136,8 +1136,12 @@ export default async function handler(request) {
             }, 400);
         }
 
-        // 防盗链验证 - 防止直接URL访问
-        if (!validateReferer(request)) {
+        // 检查是否有有效的访问令牌
+        const token = requestUrl.searchParams.get('token');
+        const hasValidToken = validateAccessToken(token);
+
+        // 防盗链验证 - 防止直接URL访问（有效token可以绕过）
+        if (!hasValidToken && !validateReferer(request)) {
             return new Response(`
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -1235,9 +1239,8 @@ export default async function handler(request) {
             });
         }
 
-        // 访问令牌验证
-        const token = requestUrl.searchParams.get('token');
-        if (!validateAccessToken(token)) {
+        // 访问令牌验证（如果之前没有验证过）
+        if (!hasValidToken) {
             return createErrorResponse({
                 error: 'Invalid or expired access token',
                 message: 'Please obtain a valid access token from the authorized website.',
