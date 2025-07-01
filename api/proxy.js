@@ -55,7 +55,7 @@ const ALLOWED_DOMAINS = Object.values(DOMAIN_WHITELIST).flat();
 
 // 防盗链配置 - 防止直接URL访问
 const ANTI_HOTLINK_CONFIG = {
-    ENABLED: false,   // 临时禁用防盗链验证，调试完成后重新启用
+    ENABLED: true,   // 启用防盗链验证，防止直接访问API
     ALLOWED_REFERERS: [
         'secure-proxy-seven.vercel.app',
         'localhost',
