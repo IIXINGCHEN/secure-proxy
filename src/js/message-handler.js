@@ -96,7 +96,7 @@ Object.assign(ProxyHandler.prototype, {
     },
 
     /**
-     * 设置消息内容
+     * 设置消息内容（XSS安全版本）
      */
     setMessageContent(messageDiv, message, type, options) {
         // 清空现有内容（保留关闭按钮）
@@ -112,11 +112,13 @@ Object.assign(ProxyHandler.prototype, {
             // 新格式：包含标题和描述
             const titleDiv = document.createElement('div');
             titleDiv.className = 'message-title';
-            titleDiv.innerHTML = message.title;
+            // 安全设置文本内容，防止XSS
+            titleDiv.textContent = this.sanitizeText(message.title);
 
             const descDiv = document.createElement('div');
             descDiv.className = 'message-description';
-            descDiv.innerHTML = message.description;
+            // 安全设置文本内容，防止XSS
+            descDiv.textContent = this.sanitizeText(message.description);
 
             contentDiv.appendChild(titleDiv);
             contentDiv.appendChild(descDiv);
@@ -124,7 +126,8 @@ Object.assign(ProxyHandler.prototype, {
             // 旧格式：纯文本
             const titleDiv = document.createElement('div');
             titleDiv.className = 'message-title';
-            titleDiv.innerHTML = message;
+            // 安全设置文本内容，防止XSS
+            titleDiv.textContent = this.sanitizeText(message);
             contentDiv.appendChild(titleDiv);
         }
 
@@ -134,6 +137,25 @@ Object.assign(ProxyHandler.prototype, {
         if (closeBtn) {
             messageDiv.appendChild(closeBtn);
         }
+    },
+
+    /**
+     * 文本内容安全化处理
+     * @param {string} text - 需要处理的文本
+     * @returns {string} 安全的文本内容
+     */
+    sanitizeText(text) {
+        if (typeof text !== 'string') {
+            return String(text || '');
+        }
+
+        // 移除潜在的HTML标签和脚本
+        return text
+            .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+            .replace(/<[^>]*>/g, '')
+            .replace(/javascript:/gi, '')
+            .replace(/on\w+\s*=/gi, '')
+            .trim();
     },
 
 

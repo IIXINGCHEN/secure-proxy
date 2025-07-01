@@ -1,6 +1,7 @@
 {
   "rewrites": [
     { "source": "/api/token", "destination": "/api/proxy?action=token" },
+    { "source": "/api/domains", "destination": "/api/proxy?action=domains" },
     { "source": "/imgs/icons/(.*)", "destination": "/public/icons/$1" },
     { "source": "/api/sw.js", "destination": "/public/sw.js" },
     { "source": "/manifest.json", "destination": "/public/manifest.json" }

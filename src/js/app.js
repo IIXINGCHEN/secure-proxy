@@ -35,10 +35,50 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 应用UI配置
     applyUIConfig(uiConfig);
-    
-    // 初始化应用
-    initializeApp(securityConfig, uiConfig, appConfig);
+
+    // 动态加载域名白名单
+    loadDomainWhitelist(securityConfig).then(() => {
+        // 初始化应用
+        initializeApp(securityConfig, uiConfig, appConfig);
+    }).catch(error => {
+        console.warn('加载域名白名单失败，使用默认配置:', error);
+        // 使用默认配置初始化应用
+        initializeApp(securityConfig, uiConfig, appConfig);
+    });
 });
+
+/**
+ * 动态加载域名白名单
+ */
+async function loadDomainWhitelist(securityConfig) {
+    try {
+        const response = await fetch('/api/domains', {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'Cache-Control': 'no-cache'
+            },
+            credentials: 'same-origin'
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.flatList) {
+                // 更新安全配置中的域名列表
+                securityConfig.ALLOWED_DOMAINS = data.flatList;
+                console.log('域名白名单加载成功:', data.flatList.length, '个域名');
+            }
+        } else {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+    } catch (error) {
+        console.warn('无法从API加载域名白名单:', error);
+        // 使用配置文件中的备用域名列表
+        const backupDomains = Object.values(securityConfig.DOMAIN_CATEGORIES).flat();
+        securityConfig.ALLOWED_DOMAINS = backupDomains;
+        console.log('使用备用域名列表:', backupDomains.length, '个域名');
+    }
+}
 
 /**
  * 应用UI配置到页面元素
@@ -48,7 +88,8 @@ function applyUIConfig(uiConfig) {
     document.title = uiConfig.PAGE_TITLE;
     const pageHeader = document.getElementById('page-header');
     if (pageHeader) {
-        pageHeader.innerHTML = `<strong>【安全】</strong>的Vercel反向代理`;
+        // 安全设置页面标题，防止XSS
+        pageHeader.textContent = '【安全】的Vercel反向代理';
     }
     
     // 更新输入框占位符

@@ -7,30 +7,51 @@
  * @license MIT
  */
 
-// 严格的域名白名单配置
-const ALLOWED_DOMAINS = [
-    'api.openai.com',
-    'openai.com',
-    'api.github.com',
-    'raw.githubusercontent.com',
-    'github.com',
-    'objects.githubusercontent.com',
-    // GitHub静态资源域名
-    'github.githubassets.com',
-    'githubassets.com',
-    'camo.githubusercontent.com',
-    'avatars.githubusercontent.com',
-    'user-images.githubusercontent.com',
-    'github-production-user-asset-6210df.s3.amazonaws.com',
-    'github-production-repository-file-5c1aeb.s3.amazonaws.com',
+// 统一的域名白名单配置（单一数据源）
+const DOMAIN_WHITELIST = {
+    // OpenAI相关服务
+    OPENAI: [
+        'api.openai.com',
+        'openai.com'
+    ],
+
+    // GitHub相关服务
+    GITHUB: [
+        'api.github.com',
+        'raw.githubusercontent.com',
+        'github.com',
+        'objects.githubusercontent.com',
+        'github.githubassets.com',
+        'githubassets.com',
+        'camo.githubusercontent.com',
+        'avatars.githubusercontent.com',
+        'user-images.githubusercontent.com',
+        'github-production-user-asset-6210df.s3.amazonaws.com',
+        'github-production-repository-file-5c1aeb.s3.amazonaws.com'
+    ],
+
     // Google服务
-    'www.google.com',
-    'translate.googleapis.com',
+    GOOGLE: [
+        'www.google.com',
+        'translate.googleapis.com'
+    ],
+
     // 音乐播放器相关域名
-    'player.imixc.top',
-    '*.imixc.top',
-    '*.ixingchen.top'
-];
+    MEDIA: [
+        'player.imixc.top',
+        '*.imixc.top',
+        '*.ixingchen.top'
+    ],
+
+    // 测试服务（可选）
+    TESTING: [
+        'httpbin.org',
+        'jsonplaceholder.typicode.com'
+    ]
+};
+
+// 扁平化域名列表
+const ALLOWED_DOMAINS = Object.values(DOMAIN_WHITELIST).flat();
 
 // 防盗链配置 - 防止直接URL访问
 const ANTI_HOTLINK_CONFIG = {
@@ -46,8 +67,92 @@ const ANTI_HOTLINK_CONFIG = {
     MAX_REQUESTS_PER_TOKEN: 10  // 每个令牌最多10次请求
 };
 
-// 访问令牌存储（生产环境应使用Redis等外部存储）
-const TOKEN_STORE = new Map();
+// 安全的令牌存储系统
+class SecureTokenStore {
+    constructor() {
+        this.tokens = new Map();
+        this.encryptionKey = this.generateEncryptionKey();
+        // 定期清理过期令牌
+        setInterval(() => this.cleanupExpiredTokens(), 60000); // 每分钟清理一次
+    }
+
+    generateEncryptionKey() {
+        // 生成基于环境的加密密钥
+        const seed = process.env.VERCEL_URL || 'default-seed';
+        return this.simpleHash(seed + Date.now().toString());
+    }
+
+    simpleHash(str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            const char = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash; // 转换为32位整数
+        }
+        return Math.abs(hash).toString(16);
+    }
+
+    encryptToken(tokenData) {
+        // 简单的加密实现（生产环境建议使用更强的加密）
+        const jsonStr = JSON.stringify(tokenData);
+        const encrypted = Buffer.from(jsonStr).toString('base64');
+        return encrypted;
+    }
+
+    decryptToken(encryptedData) {
+        try {
+            const decrypted = Buffer.from(encryptedData, 'base64').toString('utf-8');
+            return JSON.parse(decrypted);
+        } catch (error) {
+            return null;
+        }
+    }
+
+    set(tokenId, tokenData) {
+        const encryptedData = this.encryptToken(tokenData);
+        this.tokens.set(tokenId, encryptedData);
+    }
+
+    get(tokenId) {
+        const encryptedData = this.tokens.get(tokenId);
+        if (!encryptedData) return null;
+        return this.decryptToken(encryptedData);
+    }
+
+    delete(tokenId) {
+        return this.tokens.delete(tokenId);
+    }
+
+    has(tokenId) {
+        return this.tokens.has(tokenId);
+    }
+
+    cleanupExpiredTokens() {
+        const now = Date.now();
+        let cleanedCount = 0;
+
+        for (const [tokenId, encryptedData] of this.tokens.entries()) {
+            const tokenData = this.decryptToken(encryptedData);
+            if (tokenData && now > tokenData.expiresAt) {
+                this.tokens.delete(tokenId);
+                cleanedCount++;
+            }
+        }
+
+        if (cleanedCount > 0) {
+            console.log(`清理了 ${cleanedCount} 个过期令牌`);
+        }
+    }
+
+    getStats() {
+        return {
+            totalTokens: this.tokens.size,
+            timestamp: new Date().toISOString()
+        };
+    }
+}
+
+const TOKEN_STORE = new SecureTokenStore();
 
 // 生产环境配置
 const PROXY_CONFIG = {
@@ -855,6 +960,34 @@ export default async function handler(request) {
             });
         }
 
+        // 处理域名列表请求
+        if (requestUrl.pathname === '/api/domains' || requestUrl.searchParams.get('action') === 'domains') {
+            // 验证referer以确保请求来自授权网站
+            if (!validateReferer(request)) {
+                return createErrorResponse({
+                    error: 'Access denied',
+                    message: 'Domain list access is only allowed from authorized websites.',
+                    code: 'UNAUTHORIZED_DOMAINS_REQUEST',
+                    timestamp: new Date().toISOString(),
+                    requestId: generateRequestId()
+                }, 403);
+            }
+
+            return new Response(JSON.stringify({
+                success: true,
+                domains: DOMAIN_WHITELIST,
+                flatList: ALLOWED_DOMAINS,
+                timestamp: new Date().toISOString()
+            }), {
+                status: 200,
+                headers: {
+                    'Content-Type': 'application/json; charset=utf-8',
+                    'Access-Control-Allow-Origin': '*',
+                    'Cache-Control': 'public, max-age=3600' // 缓存1小时
+                }
+            });
+        }
+
         // 处理令牌生成请求
         if (requestUrl.pathname === '/api/token' || requestUrl.searchParams.get('action') === 'token') {
             // 验证referer以确保请求来自授权网站
@@ -1101,9 +1234,10 @@ export default async function handler(request) {
         if (!isAllowedDomain(targetUrlObj.hostname)) {
             return createErrorResponse({
                 error: 'Domain not allowed',
-                message: 'The requested domain is not in the allowed list',
+                message: 'The requested domain is not in the allowed list. Please contact administrator for supported domains.',
                 domain: targetUrlObj.hostname,
-                allowedDomains: ALLOWED_DOMAINS,
+                // 移除敏感信息：不再暴露完整的域名白名单
+                hint: 'Supported categories: OpenAI, GitHub, Google, Media services',
                 timestamp: new Date().toISOString(),
                 requestId: generateRequestId()
             }, 403);

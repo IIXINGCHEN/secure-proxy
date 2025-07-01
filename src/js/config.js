@@ -5,28 +5,17 @@
 
 // 安全配置
 const SECURITY_CONFIG = {
-    // 域名白名单 - 只允许代理这些域名
-    ALLOWED_DOMAINS: [
-        // OpenAI相关服务
-        'api.openai.com',
-        'openai.com',
-        
-        // GitHub相关服务
-        'api.github.com',
-        'raw.githubusercontent.com',
-        'github.com',
-        'objects.githubusercontent.com',
-        
-        // Google相关服务
-        'www.google.com',
-        'translate.googleapis.com',
-        
+    // 域名白名单配置 - 从后端API获取，避免重复配置
+    ALLOWED_DOMAINS: [], // 将在运行时从API获取
 
-        
-        // 可以根据需要添加更多域名
-         'player.imixc.top',
-         '*.ixingchen.top',
-    ],
+    // 域名分类（用于前端显示）
+    DOMAIN_CATEGORIES: {
+        'OpenAI服务': ['api.openai.com', 'openai.com'],
+        'GitHub服务': ['github.com', 'api.github.com', 'raw.githubusercontent.com'],
+        'Google服务': ['www.google.com', 'translate.googleapis.com'],
+        '媒体服务': ['player.imixc.top', '*.imixc.top', '*.ixingchen.top'],
+        '测试服务': ['httpbin.org', 'jsonplaceholder.typicode.com']
+    },
     
     // 禁止访问的内网IP段
     BLOCKED_IP_RANGES: [
