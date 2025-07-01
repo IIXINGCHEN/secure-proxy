@@ -66,8 +66,8 @@ const ANTI_HOTLINK_CONFIG = {
         'www.ixingchen.top'
     ],
     REQUIRE_TOKEN: true,   // 启用令牌验证
-    TOKEN_EXPIRY: 300000,  // 5分钟有效期，增强安全性
-    MAX_REQUESTS_PER_TOKEN: 10  // 每个令牌最多10次请求
+    TOKEN_EXPIRY: 30000,   // 30秒有效期，防止滥用
+    MAX_REQUESTS_PER_TOKEN: 1  // 每个令牌只能使用1次，防止重复使用
 };
 
 // 安全的令牌存储系统
@@ -1136,12 +1136,8 @@ export default async function handler(request) {
             }, 400);
         }
 
-        // 检查是否有有效的访问令牌
-        const token = requestUrl.searchParams.get('token');
-        const hasValidToken = validateAccessToken(token);
-
-        // 防盗链验证 - 防止直接URL访问（有效token可以绕过）
-        if (!hasValidToken && !validateReferer(request)) {
+        // 防盗链验证 - 防止直接URL访问（严格验证，不允许绕过）
+        if (!validateReferer(request)) {
             return new Response(`
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -1239,8 +1235,9 @@ export default async function handler(request) {
             });
         }
 
-        // 访问令牌验证（如果之前没有验证过）
-        if (!hasValidToken) {
+        // 访问令牌验证
+        const token = requestUrl.searchParams.get('token');
+        if (!validateAccessToken(token)) {
             return createErrorResponse({
                 error: 'Invalid or expired access token',
                 message: 'Please obtain a valid access token from the authorized website.',
